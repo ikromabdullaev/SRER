@@ -14,14 +14,17 @@
 export type Placeholder = `[${string}]`;
 
 export const journal = {
-  /** [JOURNAL_NAME] — pending, see SPEC.md §12. */
-  name: "[JOURNAL_NAME]" satisfies Placeholder as string,
+  name: "Silk Road Economic Review",
 
   /** [ISSN] — pending from the National Library of Uzbekistan. */
   issn: "[ISSN]" satisfies Placeholder as string,
 
-  /** Short form used in identifiers and file paths. */
-  shortName: "esu-je",
+  /**
+   * Short form for identifiers and file paths. Matches the journal name
+   * rather than the publisher: `esu-je` was a stand-in from the DOI example
+   * in SPEC.md §5.5, written before the title was settled.
+   */
+  shortName: "srer",
 
   publisher: "Economic Society of Uzbekistan",
 

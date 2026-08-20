@@ -135,6 +135,11 @@ Follow it; each step is verifiable before the next begins.
 
 ## Placeholders
 
-`[JOURNAL_NAME]`, `[UNIVERSITY]`, `[DOI_PREFIX]`, `[ISSN]`, and `[SITE_URL]` are unresolved
-throughout the specs. Keep them as placeholders rather than inventing values — they resolve in one
-typed config module, so a real value is a single edit when it arrives.
+The journal is **Silk Road Economic Review** (short form `srer`), published by the Economic Society
+of Uzbekistan.
+
+`[UNIVERSITY]`, `[DOI_PREFIX]`, `[ISSN]`, and `[SITE_URL]` are still unresolved. Keep them as
+placeholders rather than inventing values — they resolve in one typed config module
+(`src/config/journal.ts`), so a real value is a single edit when it arrives. `[SITE_URL]` is the
+one that blocks launch: it is open decision D2, and it gates both canonical URLs and outbound
+email.

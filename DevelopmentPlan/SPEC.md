@@ -1,7 +1,7 @@
 # SPEC.md — Journal Website
 
-> Working document for the scholarly journal published by the Economic Society of
-> Uzbekistan in collaboration with [UNIVERSITY]. Replace `[JOURNAL_NAME]`,
+> Working document for **Silk Road Economic Review**, published by the Economic
+> Society of Uzbekistan in collaboration with [UNIVERSITY]. Replace
 > `[UNIVERSITY]`, `[DOI_PREFIX]`, `[ISSN]`, and `[SITE_URL]` once confirmed.
 >
 > **This file is the source of truth for scope and behaviour. `SCHEMA.md` is the
@@ -81,6 +81,8 @@ These are settled. Do not relitigate them in code.
 | Database / storage / auth | Supabase (Postgres, Storage, Auth) |
 | Framework | Next.js, App Router, TypeScript |
 | Rendering | Static generation + ISR. **Never client-side render article metadata.** |
+| Title | **Silk Road Economic Review** (short form `srer`) |
+| Editorial address | silkroadeconomicreview@gmail.com — receives proposal notifications and is published in OAI-PMH `Identify`. It cannot be the *sender*: see §8. |
 | Licence | CC BY 4.0 (open access, no fees) |
 | DOIs | **Not in scope at this stage.** `articles.doi` stays nullable; nothing mints, requires, or deposits a DOI. |
 | DOI registrar (later) | Crossref, via Global Equitable Membership (Uzbekistan is eligible — no membership or registration fees) |
@@ -204,7 +206,7 @@ Every article page emits, **server-rendered in the initial HTML**:
 <meta name="citation_title" content="...">
 <meta name="citation_author" content="Family, Given">   <!-- one per author, in order -->
 <meta name="citation_author_institution" content="...">  <!-- follows its author tag -->
-<meta name="citation_journal_title" content="[JOURNAL_NAME]">
+<meta name="citation_journal_title" content="Silk Road Economic Review">
 <meta name="citation_issn" content="[ISSN]">
 <meta name="citation_volume" content="1">
 <meta name="citation_issue" content="1">
@@ -650,9 +652,8 @@ Follow this sequence. Each step is verifiable before the next begins.
 - Row Level Security enabled on every table. Public read is a policy, not the
   absence of one. Views need `security_invoker`; RLS does not reach through a
   view by default.
-- Journal-level constants — `[JOURNAL_NAME]`, `[ISSN]`, `[DOI_PREFIX]`,
-  `[SITE_URL]`, the Crossref depositor details — live in **one typed config
-  module**, not scattered through components and not in the database. They are
+- Journal-level constants — the title, `[ISSN]`, `[DOI_PREFIX]`, `[SITE_URL]`,
+  the Crossref depositor details — live in **one typed config module**, not scattered through components and not in the database. They are
   read by the article page, the sitemap, the OAI-PMH endpoint, and the Crossref
   generator; one file makes resolving the placeholders a single edit.
 - **Revalidation is on-demand, not time-based.** Tag article pages by slug and
