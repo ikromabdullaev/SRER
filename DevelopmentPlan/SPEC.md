@@ -292,9 +292,14 @@ Three details that are easy to miss and that harvesters do check:
 - **Resumption tokens.** `ListRecords` and `ListIdentifiers` must page. Pick a
   page size (100 is conventional) and encode the cursor in the token.
 - **Deleted records.** `Identify` must declare a `deletedRecord` policy, and it
-  has to agree with whatever §D3 decides about withdrawn articles. Declaring
+  has to agree with whatever **D3** decides about withdrawn articles. Declaring
   `persistent` and then dropping the record from the feed is a protocol
-  violation that will fail a DOAJ review.
+  violation that will fail a DOAJ review. **Currently declared `no`** — the
+  honest position while D3 is open, since the repository genuinely does not
+  maintain deletion information yet. Revisit it the moment D3 is settled:
+  a repository that starts dropping records while declaring `no` is merely
+  unhelpful, whereas one that declares `persistent` and then drops them is
+  broken.
 
 Required by DOAJ and by most regional aggregators. It is a few hours of work and
 it is the difference between being harvested and being ignored.
@@ -616,6 +621,9 @@ Follow this sequence. Each step is verifiable before the next begins.
    sanitising paste, image upload.
 7. **Proposal form → DB → Resend.**
 8. **OAI-PMH endpoint + sitemap.** The Crossref generator is deferred with §5.5.
+   Verify the endpoint with an external validator before announcing it: a
+   harvester that rejects the feed does so silently, and the failure looks
+   exactly like nobody having found the journal yet.
 9. **Design pass.** Not before this point.
 
 ---

@@ -26,6 +26,13 @@ export const journal = {
   publisher: "Economic Society of Uzbekistan",
 
   /**
+   * Contact address published in OAI-PMH `Identify`. Harvesters and DOAJ both
+   * read it, so it must be a real, monitored mailbox before launch. This also
+   * becomes the destination for proposal notifications at build step 7.
+   */
+  adminEmail: process.env.EDITORIAL_EMAIL ?? "[EDITORIAL_EMAIL]",
+
+  /**
    * DOIs are out of scope at this stage (SPEC.md §2). Nothing mints, requires,
    * or deposits one. The article page omits `citation_doi` when absent, so this
    * starts working by itself if a prefix is ever assigned.
