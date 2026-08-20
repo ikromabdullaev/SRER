@@ -188,25 +188,145 @@ function toArticle(
 }
 
 /**
+ * Rows from the localised view, shaped for rendering.
+ *
+ * Every listing below repeats its own query rather than sharing a builder.
+ * That is deliberate: supabase-js query builders change type with each
+ * modifier, so a shared "refine this query" helper buys a few saved lines at
+ * the cost of generics nobody can read. The queries are short; leave them.
+ */
+function toArticles(rows: LocalisedRow[]): LocalisedArticle[] {
+  return rows.map((row) => {
+    assertRenderable(row);
+    return { ...toArticle(row), authors: [] };
+  });
+}
+
+/**
  * Published articles for a locale, newest first.
  *
  * Ordered by `published_at`, not by issue year: an online-first article has no
  * issue, so ordering through the join would drop it entirely (SPEC.md §6 makes
  * the same point about the year filter).
  */
-export async function listArticles(locale: Locale): Promise<LocalisedArticle[]> {
+export async function listArticles(
+  locale: Locale,
+  options: { limit?: number } = {},
+): Promise<LocalisedArticle[]> {
   const supabase = createPublicClient();
-
-  const { data, error } = await supabase
+  const query = supabase
     .from("published_articles_localised")
     .select("*")
     .eq("requested_locale", locale)
     .order("published_at", { ascending: false });
 
+  const { data, error } = options.limit ? await query.limit(options.limit) : await query;
   if (error) throw error;
+  return toArticles(data ?? []);
+}
 
-  return (data ?? []).map((row) => {
-    assertRenderable(row);
-    return { ...toArticle(row), authors: [] };
-  });
+/** Articles published ahead of an issue (SPEC.md §7.2). */
+export async function listOnlineFirst(locale: Locale): Promise<LocalisedArticle[]> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("published_articles_localised")
+    .select("*")
+    .eq("requested_locale", locale)
+    .is("issue_id", null)
+    .order("published_at", { ascending: false });
+
+  if (error) throw error;
+  return toArticles(data ?? []);
+}
+
+/**
+ * One issue's table of contents, in editorial order.
+ *
+ * Ordered by `position` — the running order the editors set, not page number
+ * and not alphabetical (SPEC.md §7.2).
+ */
+export async function listIssueContents(
+  issueId: string,
+  locale: Locale,
+): Promise<LocalisedArticle[]> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("published_articles_localised")
+    .select("*")
+    .eq("requested_locale", locale)
+    .eq("issue_id", issueId)
+    .order("position", { ascending: true });
+
+  if (error) throw error;
+  return toArticles(data ?? []);
+}
+
+/** The articles an author appears on, newest first. */
+export async function listArticlesByAuthor(
+  authorId: string,
+  locale: Locale,
+): Promise<LocalisedArticle[]> {
+  const supabase = createPublicClient();
+
+  const { data: links, error: linkError } = await supabase
+    .from("article_authors")
+    .select("article_id")
+    .eq("author_id", authorId);
+
+  if (linkError) throw linkError;
+  const ids = (links ?? []).map((l) => l.article_id);
+  if (ids.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("published_articles_localised")
+    .select("*")
+    .eq("requested_locale", locale)
+    .in("id", ids)
+    .order("published_at", { ascending: false });
+
+  if (error) throw error;
+  return toArticles(data ?? []);
+}
+
+/** One author, by the slug that resolves open decision D6. */
+export async function getAuthorBySlug(slug: string, locale: Locale) {
+  const supabase = createPublicClient();
+
+  const { data, error } = await supabase
+    .from("authors")
+    .select(
+      `id, slug, family_name, given_name, orcid, website_url,
+       author_translations ( locale, display_name, affiliation )`,
+    )
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const translations = data.author_translations ?? [];
+  const preferred =
+    translations.find((t) => t.locale === locale) ??
+    translations.find((t) => t.locale === "en") ??
+    translations[0];
+
+  return {
+    id: data.id,
+    slug: data.slug,
+    familyName: data.family_name,
+    givenName: data.given_name,
+    orcid: data.orcid,
+    websiteUrl: data.website_url,
+    displayName:
+      preferred?.display_name ?? `${data.family_name}, ${data.given_name}`,
+    affiliation: preferred?.affiliation ?? null,
+  };
+}
+
+/** Every author slug, for static params. */
+export async function getAuthorSlugs(): Promise<string[]> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase.from("authors").select("slug");
+  if (error) throw error;
+  return (data ?? []).map((row) => row.slug);
 }

@@ -152,3 +152,87 @@ h3 {
   border-bottom: 1px solid var(--rule);
   padding: 1rem 0;
 }
+
+/* Homepage sections ---------------------------------------------------- */
+
+section {
+  margin: 2.5rem 0;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.section-head h2 {
+  margin-bottom: 0.4rem;
+}
+
+.section-head a {
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+}
+
+.home-welcome__lede {
+  font-size: 1.15rem;
+  color: var(--ink-muted);
+}
+
+.home-about__name {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.home-submit .button {
+  display: inline-block;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--ink);
+  text-decoration: none;
+  font-family: system-ui, sans-serif;
+  font-size: 0.95rem;
+}
+
+.language-filter {
+  display: inline-block;
+  margin: 1rem 0;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+/* Weekly post body ------------------------------------------------------
+   Sanitised HTML from the admin editor. Constrained so a pasted document
+   cannot break the page: images never exceed the measure, and wide tables
+   scroll inside their own box rather than widening the document. */
+
+.post-body img {
+  max-width: 100%;
+  height: auto;
+}
+
+.post-body table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.post-body td,
+.post-body th {
+  border: 1px solid var(--rule);
+  padding: 0.4rem 0.6rem;
+}
+
+.post-body blockquote {
+  margin: 1.5rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--rule);
+  color: var(--ink-muted);
+}
+
+.post-body pre {
+  overflow-x: auto;
+}

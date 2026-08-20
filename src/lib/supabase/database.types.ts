@@ -247,6 +247,7 @@ export type Database = {
           given_name: string
           id: string
           orcid: string | null
+          slug: string
           website_url: string | null
         }
         Insert: {
@@ -256,6 +257,7 @@ export type Database = {
           given_name: string
           id?: string
           orcid?: string | null
+          slug: string
           website_url?: string | null
         }
         Update: {
@@ -265,6 +267,7 @@ export type Database = {
           given_name?: string
           id?: string
           orcid?: string | null
+          slug?: string
           website_url?: string | null
         }
         Relationships: []

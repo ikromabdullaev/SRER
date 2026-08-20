@@ -144,6 +144,7 @@ create table article_translations (
 -- ===== block 9 : `authors` =====
 create table authors (
   id            uuid primary key default uuid_generate_v4(),
+  slug          text not null unique,   -- URL-safe; /authors/{slug}
   family_name   text not null,     -- Latin, canonical
   given_name    text not null,     -- Latin, canonical
   orcid         text unique,
@@ -152,7 +153,9 @@ create table authors (
   created_at    timestamptz not null default now(),
 
   constraint orcid_format
-    check (orcid is null or orcid ~ '^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$')
+    check (orcid is null or orcid ~ '^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$'),
+  constraint author_slug_format
+    check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$')
 );
 
 create table author_translations (
@@ -469,7 +472,7 @@ grant select on posts             to anon, authenticated;
 grant select on post_translations to anon, authenticated;
 
 -- authors is column-restricted: everything except `email`.
-grant select (id, family_name, given_name, orcid, website_url, created_at)
+grant select (id, slug, family_name, given_name, orcid, website_url, created_at)
   on authors to anon, authenticated;
 
 -- profiles is column-restricted for the Weekly byline. `role` is withheld:

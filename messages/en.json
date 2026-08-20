@@ -8,6 +8,7 @@
     "home": "Home",
     "issues": "Issues",
     "onlineFirst": "Online first",
+    "weekly": "Weekly",
     "search": "Search",
     "about": "About",
     "forAuthors": "For authors",
@@ -17,9 +18,19 @@
   },
   "home": {
     "title": "Home",
-    "latestIssue": "Latest issue",
-    "onlineFirstHeading": "Published online first",
-    "noArticles": "No articles have been published yet."
+    "welcomeHeading": "Economic research from Central Asia and the Caucasus",
+    "welcomeLede": "A peer-reviewed, open-access journal published by the Economic Society of Uzbekistan. Every article is free to read and free to publish.",
+    "weeklyHeading": "This week",
+    "seeAllWeekly": "All Weekly posts",
+    "noPosts": "No Weekly posts have been published yet.",
+    "aboutHeading": "About the journal",
+    "aboutScope": "We publish original empirical and theoretical research in economics, along with policy notes, review articles, and case studies.",
+    "aboutFocus": "Our focus is the economies of Central Asia and the Caucasus: work on the region, work using data from the region, and comparative research that places it in a wider context.",
+    "publishedHeading": "Recently published",
+    "seeAllIssues": "All issues",
+    "noArticles": "No articles have been published yet.",
+    "submitHeading": "Proposing an article",
+    "submitLede": "We accept proposals year-round. Send a title and an abstract and an editor will be in touch; there are no submission or publication fees."
   },
   "article": {
     "abstract": "Abstract",
@@ -38,7 +49,40 @@
     "issueLine": "Volume {volume}, Issue {number} ({year})",
     "notFound": "Article not found"
   },
+  "issues": {
+    "title": "Issues",
+    "lede": "Every published issue, newest first.",
+    "issueLine": "Volume {volume}, Issue {number}",
+    "year": "{year}",
+    "contents": "Contents",
+    "empty": "This issue has no articles yet.",
+    "none": "No issues have been published yet.",
+    "onlineFirstTitle": "Online first",
+    "onlineFirstLede": "Articles published ahead of issue assignment. Their URLs and PDFs are permanent and will not change when an issue is assigned."
+  },
+  "weekly": {
+    "title": "Weekly",
+    "lede": "Commentary and short notes from our editors, published as they are written.",
+    "byline": "By {name}",
+    "availableIn": "Available in",
+    "filterLabel": "Language",
+    "filterAll": "All languages",
+    "none": "No posts yet.",
+    "seriesTitle": "Weekly by {name}",
+    "backToWeekly": "All Weekly posts",
+    "notFound": "Post not found"
+  },
+  "author": {
+    "title": "Author",
+    "articles": "Articles",
+    "affiliation": "Affiliation",
+    "orcid": "ORCID",
+    "website": "Website",
+    "noArticles": "No published articles.",
+    "notFound": "Author not found"
+  },
   "common": {
-    "readMore": "Read more"
+    "readMore": "Read more",
+    "backToHome": "Back to home"
   }
 }

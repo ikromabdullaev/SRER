@@ -8,6 +8,7 @@
     "home": "Bosh sahifa",
     "issues": "Sonlar",
     "onlineFirst": "Onlayn nashr",
+    "weekly": "Haftalik",
     "search": "Qidiruv",
     "about": "Jurnal haqida",
     "forAuthors": "Mualliflar uchun",
@@ -17,9 +18,19 @@
   },
   "home": {
     "title": "Bosh sahifa",
-    "latestIssue": "So'nggi son",
-    "onlineFirstHeading": "Onlayn nashr etilgan",
-    "noArticles": "Hozircha maqolalar chop etilmagan."
+    "welcomeHeading": "Markaziy Osiyo va Kavkaz iqtisodiyoti bo'yicha tadqiqotlar",
+    "welcomeLede": "O'zbekiston Iqtisodiyot Jamiyati nashr etadigan, taqrizdan o'tadigan ochiq kirishli jurnal. O'qish ham, nashr etish ham bepul.",
+    "weeklyHeading": "Shu hafta",
+    "seeAllWeekly": "Barcha haftalik nashrlar",
+    "noPosts": "Hozircha nashrlar yo'q.",
+    "aboutHeading": "Jurnal haqida",
+    "aboutScope": "Biz iqtisodiyot bo'yicha original empirik va nazariy tadqiqotlarni, shuningdek siyosat sharhlari, taqriz maqolalari va amaliy tahlillarni nashr etamiz.",
+    "aboutFocus": "Asosiy yo'nalishimiz — Markaziy Osiyo va Kavkaz iqtisodiyoti: mintaqa haqidagi ishlar, mintaqa ma'lumotlariga asoslangan tadqiqotlar va qiyosiy tahlillar.",
+    "publishedHeading": "So'nggi nashrlar",
+    "seeAllIssues": "Barcha sonlar",
+    "noArticles": "Hozircha maqolalar chop etilmagan.",
+    "submitHeading": "Maqola taklif qilish",
+    "submitLede": "Takliflar yil davomida qabul qilinadi. Sarlavha va annotatsiya yuboring — muharrir siz bilan bog'lanadi. Hech qanday to'lov olinmaydi."
   },
   "article": {
     "abstract": "Annotatsiya",
@@ -38,7 +49,40 @@
     "issueLine": "{volume}-jild, {number}-son ({year})",
     "notFound": "Maqola topilmadi"
   },
+  "issues": {
+    "title": "Sonlar",
+    "lede": "Barcha nashr etilgan sonlar, eng yangisidan boshlab.",
+    "issueLine": "{volume}-jild, {number}-son",
+    "year": "{year}",
+    "contents": "Mundarija",
+    "empty": "Bu sonda hozircha maqolalar yo'q.",
+    "none": "Hozircha sonlar nashr etilmagan.",
+    "onlineFirstTitle": "Onlayn nashr",
+    "onlineFirstLede": "Songa kiritilishidan oldin nashr etilgan maqolalar. Ularning manzillari va PDF fayllari o'zgarmaydi."
+  },
+  "weekly": {
+    "title": "Haftalik",
+    "lede": "Muharrirlarimizning sharhlari va qisqa yozmalari.",
+    "byline": "Muallif: {name}",
+    "availableIn": "Mavjud tillar",
+    "filterLabel": "Til",
+    "filterAll": "Barcha tillar",
+    "none": "Hozircha nashrlar yo'q.",
+    "seriesTitle": "{name} haftalik nashrlari",
+    "backToWeekly": "Barcha nashrlar",
+    "notFound": "Nashr topilmadi"
+  },
+  "author": {
+    "title": "Muallif",
+    "articles": "Maqolalar",
+    "affiliation": "Ish joyi",
+    "orcid": "ORCID",
+    "website": "Veb-sayt",
+    "noArticles": "Nashr etilgan maqolalar yo'q.",
+    "notFound": "Muallif topilmadi"
+  },
   "common": {
-    "readMore": "Batafsil"
+    "readMore": "Batafsil",
+    "backToHome": "Bosh sahifaga"
   }
 }

@@ -43,10 +43,10 @@ insert into issue_translations (issue_id, locale, title, description) values
   ('00000000-0000-0000-0000-0000000000b1', 'en', null, 'The inaugural issue.'),
   ('00000000-0000-0000-0000-0000000000b1', 'ru', null, 'Первый выпуск.');
 
-insert into authors (id, family_name, given_name, orcid, email) values
-  ('00000000-0000-0000-0000-0000000000c1', 'Karimov',  'Aziz',    '0000-0002-1825-0097', 'karimov@example.uz'),
-  ('00000000-0000-0000-0000-0000000000c2', 'Ivanova',  'Elena',   null,                  'ivanova@example.ru'),
-  ('00000000-0000-0000-0000-0000000000c3', 'Yusupova', 'Nilufar', null,                  null);
+insert into authors (id, slug, family_name, given_name, orcid, email) values
+  ('00000000-0000-0000-0000-0000000000c1', 'karimov-aziz',     'Karimov',  'Aziz',    '0000-0002-1825-0097', 'karimov@example.uz'),
+  ('00000000-0000-0000-0000-0000000000c2', 'ivanova-elena',    'Ivanova',  'Elena',   null,                  'ivanova@example.ru'),
+  ('00000000-0000-0000-0000-0000000000c3', 'yusupova-nilufar', 'Yusupova', 'Nilufar', null,                  null);
 
 insert into author_translations (author_id, locale, display_name, affiliation) values
   ('00000000-0000-0000-0000-0000000000c1', 'en', 'Karimov, Aziz',      'Tashkent State University'),
