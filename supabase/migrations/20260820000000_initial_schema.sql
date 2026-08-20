@@ -479,7 +479,39 @@ grant select (id, slug, family_name, given_name, orcid, website_url, created_at)
 -- which accounts are admins is not public information.
 grant select (id, handle, full_name, bio) on profiles to anon, authenticated;
 
--- ===== block 17 : Views =====
+-- ===== block 17 : Storage buckets =====
+insert into storage.buckets (id, name, public)
+values
+  ('articles',    'articles',    true),
+  ('covers',      'covers',      true),
+  ('post-images', 'post-images', true),
+  ('proposals',   'proposals',   false)
+on conflict (id) do nothing;
+
+-- Public buckets are readable by anyone. This is the point: citation_pdf_url
+-- must be a direct, permanent, unauthenticated link (SPEC.md 5.1), and a
+-- signed URL would expire and break Google Scholar.
+create policy "public reads public buckets"
+  on storage.objects for select
+  using (bucket_id in ('articles', 'covers', 'post-images'));
+
+-- Staff write the public buckets.
+create policy "staff write public buckets"
+  on storage.objects for insert to authenticated
+  with check (bucket_id in ('articles', 'covers', 'post-images') and is_staff());
+
+create policy "staff update public buckets"
+  on storage.objects for update to authenticated
+  using (bucket_id in ('articles', 'covers', 'post-images') and is_staff());
+
+-- Proposal uploads are private: readable by staff only, and written by the
+-- server on behalf of an anonymous submitter through a signed upload URL
+-- (SPEC.md 8). There is no anon policy here at all.
+create policy "staff read proposal files"
+  on storage.objects for select to authenticated
+  using (bucket_id = 'proposals' and is_staff());
+
+-- ===== block 18 : Views =====
 -- Fallback priority for one candidate locale. Immutable so it can be used in
 -- an ORDER BY without blocking inlining.
 create or replace function locale_rank(
@@ -545,7 +577,7 @@ where a.state = 'published';
 
 grant select on published_articles_localised to anon, authenticated;
 
--- ===== block 18 : Search =====
+-- ===== block 19 : Search =====
 create or replace function locale_regconfig(l locale_code)
 returns regconfig language sql immutable parallel safe as $$
   select case l
@@ -785,7 +817,7 @@ grant execute on function search_articles(
 grant execute on function search_posts(text, locale_code, int, int)
   to anon, authenticated;
 
--- ===== block 19 : Triggers =====
+-- ===== block 20 : Triggers =====
 create or replace function touch_updated_at() returns trigger
 language plpgsql as $$
 begin new.updated_at = now(); return new; end $$;
@@ -892,3 +924,119 @@ end $$;
 
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function handle_new_user();
+
+-- ===== block 21 : Writing: the publish RPC =====
+create or replace function publish_article(
+  payload jsonb
+) returns uuid
+language plpgsql security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_article_id uuid;
+  v_translation jsonb;
+  v_author jsonb;
+  v_position int := 0;
+begin
+  if not is_staff() then
+    raise exception 'not authorised';
+  end if;
+
+  -- Insert or update the article itself.
+  v_article_id := nullif(payload->>'id', '')::uuid;
+
+  if v_article_id is null then
+    insert into articles (
+      slug, issue_id, position, primary_language, type, pdf_url,
+      pdf_size_bytes, first_page, last_page, jel_codes, license,
+      state, published_at, received_at, accepted_at
+    ) values (
+      payload->>'slug',
+      nullif(payload->>'issue_id', '')::uuid,
+      nullif(payload->>'position', '')::int,
+      (payload->>'primary_language')::locale_code,
+      coalesce(nullif(payload->>'type', ''), 'research_article')::article_type,
+      nullif(payload->>'pdf_url', ''),
+      nullif(payload->>'pdf_size_bytes', '')::bigint,
+      nullif(payload->>'first_page', '')::int,
+      nullif(payload->>'last_page', '')::int,
+      coalesce(
+        (select array_agg(value::text)
+         from jsonb_array_elements_text(payload->'jel_codes')), '{}'),
+      coalesce(nullif(payload->>'license', ''), 'CC BY 4.0'),
+      coalesce(nullif(payload->>'state', ''), 'draft')::publish_state,
+      nullif(payload->>'published_at', '')::timestamptz,
+      nullif(payload->>'received_at', '')::date,
+      nullif(payload->>'accepted_at', '')::date
+    )
+    returning id into v_article_id;
+  else
+    update articles set
+      issue_id         = nullif(payload->>'issue_id', '')::uuid,
+      position         = nullif(payload->>'position', '')::int,
+      primary_language = (payload->>'primary_language')::locale_code,
+      type             = coalesce(nullif(payload->>'type', ''), 'research_article')::article_type,
+      pdf_url          = coalesce(nullif(payload->>'pdf_url', ''), pdf_url),
+      pdf_size_bytes   = nullif(payload->>'pdf_size_bytes', '')::bigint,
+      first_page       = nullif(payload->>'first_page', '')::int,
+      last_page        = nullif(payload->>'last_page', '')::int,
+      jel_codes        = coalesce(
+        (select array_agg(value::text)
+         from jsonb_array_elements_text(payload->'jel_codes')), '{}'),
+      license          = coalesce(nullif(payload->>'license', ''), 'CC BY 4.0'),
+      state            = coalesce(nullif(payload->>'state', ''), 'draft')::publish_state,
+      published_at     = nullif(payload->>'published_at', '')::timestamptz,
+      received_at      = nullif(payload->>'received_at', '')::date,
+      accepted_at      = nullif(payload->>'accepted_at', '')::date
+    where id = v_article_id;
+  end if;
+
+  -- Translations. A tab left entirely blank is skipped, not stored empty:
+  -- SPEC.md 7.1 requires publishing to succeed with one locale filled, and an
+  -- empty-string title would defeat the primary-translation guard.
+  delete from article_translations where article_id = v_article_id;
+
+  for v_translation in
+    select * from jsonb_array_elements(coalesce(payload->'translations', '[]'::jsonb))
+  loop
+    continue when coalesce(btrim(v_translation->>'title'), '') = '';
+
+    insert into article_translations (article_id, locale, title, abstract, keywords)
+    values (
+      v_article_id,
+      (v_translation->>'locale')::locale_code,
+      btrim(v_translation->>'title'),
+      nullif(btrim(coalesce(v_translation->>'abstract', '')), ''),
+      coalesce(
+        (select array_agg(btrim(value::text))
+         from jsonb_array_elements_text(v_translation->'keywords')
+         where btrim(value::text) <> ''), '{}')
+    );
+  end loop;
+
+  -- Authors, in the order given. Positions are rewritten from scratch, which
+  -- is why the unique constraint on (article_id, position) is deferrable.
+  delete from article_authors where article_id = v_article_id;
+
+  for v_author in
+    select * from jsonb_array_elements(coalesce(payload->'authors', '[]'::jsonb))
+  loop
+    v_position := v_position + 1;
+    insert into article_authors (article_id, author_id, position, is_corresponding)
+    values (
+      v_article_id,
+      (v_author->>'author_id')::uuid,
+      v_position,
+      coalesce((v_author->>'is_corresponding')::boolean, false)
+    );
+  end loop;
+
+  return v_article_id;
+end $$;
+
+-- from PUBLIC, not from anon. Postgres grants EXECUTE on a new function to
+-- PUBLIC by default, so revoking from `anon` alone changes nothing: anon still
+-- inherits it. Verified -- with only the anon revoke, an anon caller reached
+-- the function body and was stopped by is_staff() rather than by the grant.
+revoke execute on function publish_article(jsonb) from public;
+grant execute on function publish_article(jsonb) to authenticated;

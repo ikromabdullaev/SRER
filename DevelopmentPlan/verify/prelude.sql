@@ -47,3 +47,25 @@ language sql stable as $$
 $$;
 
 grant execute on function auth.uid() to anon, authenticated;
+
+-- Storage shim. SCHEMA.md creates buckets and policies in SQL so a fresh
+-- environment matches production; the harness needs somewhere for them to go.
+create schema storage;
+grant usage on schema storage to anon, authenticated, service_role;
+
+create table storage.buckets (
+  id      text primary key,
+  name    text not null,
+  public  boolean not null default false
+);
+
+create table storage.objects (
+  id         uuid primary key default gen_random_uuid(),
+  bucket_id  text references storage.buckets(id),
+  name       text,
+  owner      uuid,
+  created_at timestamptz default now()
+);
+
+alter table storage.objects enable row level security;
+grant select on storage.objects to anon, authenticated;

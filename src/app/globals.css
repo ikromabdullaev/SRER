@@ -287,3 +287,54 @@ section {
 .pagination button[disabled] {
   opacity: 0.4;
 }
+
+/* Admin ----------------------------------------------------------------
+   English-only, utilitarian. The design pass (step 9) is for the public
+   site; this needs to be clear and fast to use, not styled. */
+
+.admin {
+  max-width: 52rem;
+  font-family: system-ui, sans-serif;
+}
+
+.admin-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.admin-login {
+  max-width: 22rem;
+  margin: 4rem auto;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.admin-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  padding: 0.45rem;
+  font: inherit;
+  border: 1px solid var(--rule);
+}
+
+.admin-error {
+  color: #a3231d;
+  font-size: 0.9rem;
+}

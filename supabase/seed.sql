@@ -4,8 +4,13 @@
 -- trigger requiring a primary-language title, so an article and its
 -- translations must commit together.
 --
--- Auth rows exist only so `profiles` has something to reference. They carry no
--- usable password; real credentials arrive with build step 6.
+-- Local development accounts. The password below is a LOCAL DEV CREDENTIAL and
+-- is committed on purpose so a fresh checkout can sign in; it exists only in
+-- the throwaway local stack. Production accounts are created by inviting the
+-- address from the Supabase dashboard -- there is no public signup anywhere.
+--
+--   admin@example.org  / devpassword   (role: admin)
+--   editor@example.org / devpassword   (role: editor)
 
 begin;
 
@@ -17,12 +22,14 @@ insert into auth.users (
 ) values
   ('00000000-0000-0000-0000-000000000000',
    '00000000-0000-0000-0000-0000000000a1', 'authenticated', 'authenticated',
-   'admin@example.org', '', now(), now(), now(),
+   'admin@example.org', extensions.crypt('devpassword', extensions.gen_salt('bf')),
+   now(), now(), now(),
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Admin One"}'::jsonb, '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000',
    '00000000-0000-0000-0000-0000000000a2', 'authenticated', 'authenticated',
-   'editor@example.org', '', now(), now(), now(),
+   'editor@example.org', extensions.crypt('devpassword', extensions.gen_salt('bf')),
+   now(), now(), now(),
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Editor Two"}'::jsonb, '', '', '', '');
 
