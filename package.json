@@ -13,7 +13,7 @@
     "db:check": "node scripts/extract-schema.mjs --check",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
-    "verify": "npm run db:check && npm run lint && tsc --noEmit && vitest run"
+    "verify": "npm run db:check && npm run lint && tsc --noEmit && vitest run && echo \"VERIFY OK\""
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

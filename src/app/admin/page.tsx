@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaffProfile } from "@/lib/supabase/auth";
 import { SignOutButton } from "@/components/admin/sign-out-button";
@@ -21,13 +22,13 @@ export default async function AdminHome() {
       <h1>Admin</h1>
       <ul>
         <li>
-          <a href="/admin/articles">Articles</a>
+          <Link href="/admin/articles">Articles</Link>
         </li>
         <li>
-          <a href="/admin/weekly">Weekly</a>
+          <Link href="/admin/weekly">Weekly</Link>
         </li>
         <li>
-          <a href="/admin/proposals">Proposals</a>
+          <Link href="/admin/proposals">Proposals</Link>
         </li>
       </ul>
     </>
