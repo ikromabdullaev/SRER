@@ -512,8 +512,10 @@ on COPE guidance), open access and licensing statement, archiving policy,
 authorship and conflict-of-interest policy, and a statement that no fees are
 charged.
 
-Store as MDX in the repo, one file per locale, at
-`content/{locale}/{page}.mdx`. These change rarely and don't need to be in the
+Store as **Markdown** in the repo, one file per locale, at
+`content/{locale}/{page}.md`. (Markdown rather than MDX: these pages are
+structured prose with no components in them, and MDX would add a compiler
+step to buy nothing.) These change rarely and don't need to be in the
 database.
 
 **The article fallback rules in §4.3 do not apply here.** These pages are

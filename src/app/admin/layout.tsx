@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import "../globals.css";
+import "./admin.css";
+import { ptSerif, golos } from "@/fonts";
 
 /**
  * Admin shell. English-only and not locale-prefixed (SPEC.md §7), so it sits
@@ -14,7 +16,7 @@ export const metadata = {
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${ptSerif.variable} ${golos.variable}`}>
       <body>
         <main id="content" className="admin">
           {children}

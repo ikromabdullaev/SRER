@@ -84,9 +84,9 @@ insert into article_translations (article_id, locale, title, abstract, keywords)
    'В статье рассматривается связь между открытостью торговли и экономическим ростом в пяти странах Центральной Азии.',
    '{торговля,рост}'),
   ('00000000-0000-0000-0000-0000000000d1', 'uz',
-   'Markaziy Osiyoda savdo ochiqligi va iqtisodiy osish',
-   'Maqolada Markaziy Osiyoning besh davlatida savdo ochiqligi va iqtisodiy osish ortasidagi bogliqlik tahlil qilinadi.',
-   '{savdo,osish}');
+   'Markaziy Osiyoda savdo ochiqligi va iqtisodiy oʼsish',
+   'Maqolada Markaziy Osiyoning besh davlatida savdo ochiqligi va iqtisodiy oʼsish oʼrtasidagi bogʼliqlik tahlil qilinadi.',
+   '{savdo,oʼsish}');
 
 -- 2: ru primary, ru + en. The ru row is deliberately HALF-FILLED (title, no
 --    abstract, no keywords) to exercise field-level fallback.
@@ -115,8 +115,8 @@ values ('00000000-0000-0000-0000-0000000000d3', 'ozbekiston-iqtisodiyoti',
 
 insert into article_translations (article_id, locale, title, abstract, keywords) values
   ('00000000-0000-0000-0000-0000000000d3', 'uz',
-   'Ozbekiston iqtisodiyotining raqamli transformatsiyasi',
-   'Ushbu maqolada Ozbekiston iqtisodiyotining raqamli transformatsiyasi jarayonlari tahlil qilinadi.',
+   'Oʼzbekiston iqtisodiyotining raqamli transformatsiyasi',
+   'Ushbu maqolada Oʼzbekiston iqtisodiyotining raqamli transformatsiyasi jarayonlari tahlil qilinadi.',
    '{iqtisodiyot,raqamlashtirish}');
 
 -- 4: online first. No issue, therefore no volume, number, or year.
@@ -132,7 +132,7 @@ insert into article_translations (article_id, locale, title, abstract, keywords)
    'Remittances and household consumption',
    'Published online ahead of issue assignment.', '{remittances,consumption}'),
   ('00000000-0000-0000-0000-0000000000d4', 'uz',
-   'Pul otkazmalari va uy xojaligi isteemoli', null, '{}');
+   'Pul oʼtkazmalari va uy xoʼjaligi isteʼmoli', null, '{}');
 
 -- 5: draft. Must be invisible to the anon key, through tables and the view.
 insert into articles (id, slug, issue_id, position, primary_language, pdf_url,
@@ -177,8 +177,8 @@ insert into post_translations (post_id, locale, title, excerpt, body) values
    '<p>Пересмотренные торговые показатели менее драматичны, чем следовало из заголовков.</p>'),
   ('00000000-0000-0000-0000-0000000000e1', 'uz',
    'Haftalik ilmiy sharh: 12-hafta',
-   'Savdo malumotlari va qayta korib chiqishlar.',
-   '<p>Qayta korib chiqilgan savdo korsatkichlari sarlavhalarga qaraganda kamroq keskin.</p>');
+   'Savdo malumotlari va qayta koʼrib chiqishlar.',
+   '<p>Qayta koʼrib chiqilgan savdo koʼrsatkichlari sarlavhalarga qaraganda kamroq keskin.</p>');
 
 -- 2: ENGLISH ONLY. This is the seed that proves a language filter removes a
 --    post rather than falling back to another language the way articles do.

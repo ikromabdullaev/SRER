@@ -34,20 +34,34 @@
   },
   "article": {
     "abstract": "Abstract",
-    "keywords": "Keywords",
-    "authors": "Authors",
-    "downloadPdf": "Download PDF",
-    "pages": "Pages {first}–{last}",
-    "published": "Published {date}",
-    "received": "Received {date}",
     "accepted": "Accepted {date}",
-    "licence": "Licence",
-    "onlineFirstNotice": "This article was published online first and has not yet been assigned to an issue.",
-    "translationMissing": "This abstract is not yet available in {language}. It is shown in {shown} instead.",
-    "titleFallbackNotice": "This article has no {language} translation. It is shown in {shown}.",
+    "authors": "Authors",
     "correspondingAuthor": "Corresponding author",
+    "downloadPdf": "Download PDF",
+    "issueLabel": "Issue",
     "issueLine": "Volume {volume}, Issue {number} ({year})",
-    "notFound": "Article not found"
+    "keywords": "Keywords",
+    "licence": "Licence",
+    "notFound": "Article not found",
+    "onlineFirstNotice": "This article was published online first and has not yet been assigned to an issue.",
+    "pages": "Pages {first}–{last}",
+    "pagesLabel": "Pages",
+    "published": "Published {date}",
+    "publishedLabel": "Published",
+    "received": "Received {date}",
+    "titleFallbackNotice": "This article has no {language} translation. It is shown in {shown}.",
+    "translationMissing": "This abstract is not yet available in {language}. It is shown in {shown} instead.",
+    "type": {
+      "book_review": "Book review",
+      "case_study": "Case study",
+      "correction": "Correction",
+      "editorial": "Editorial",
+      "policy_note": "Policy note",
+      "research_article": "Research article",
+      "retraction": "Retraction",
+      "review_article": "Review article"
+    },
+    "typeLabel": "Type"
   },
   "issues": {
     "title": "Issues",
@@ -128,5 +142,14 @@
     "successHeading": "Proposal received",
     "title": "Propose an article",
     "uploading": "Uploading…"
+  },
+  "footer": {
+    "board": "Editorial board",
+    "journal": "The journal",
+    "legal": "Published by {publisher}. Articles are the work of their authors.",
+    "machines": "For machines",
+    "noFees": "No fees to read or publish",
+    "openAccess": "Open access",
+    "read": "Read"
   }
 }

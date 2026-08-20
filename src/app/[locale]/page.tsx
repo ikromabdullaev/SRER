@@ -6,20 +6,19 @@ import { Link } from "@/i18n/navigation";
 import { listArticles } from "@/lib/articles";
 import { listPosts } from "@/lib/posts";
 import { journal } from "@/config/journal";
+import { Registers } from "@/components/registers";
 
 /**
- * Homepage, in the order the editors asked for:
+ * Homepage, in the order the editors asked for: welcome, latest Weekly, what
+ * the journal is, recently published, submit.
  *
- *   1. welcome
- *   2. latest Weekly posts
- *   3. what the journal is and what it accepts
- *   4. recently published papers
- *   5. the call to submit
+ * Weekly sits above the record because it is what changes every week and
+ * gives a returning reader a reason to come back. The record is what readers
+ * arrive looking for and is reachable from anywhere.
  *
- * Weekly sits above the scholarly record here because it is the part that
- * changes every week and gives a returning reader a reason to come back;
- * the published record is the part they arrive looking for and can be found
- * from anywhere.
+ * Everything on this page is a dense list of real facts. A journal with four
+ * articles shows four articles properly rather than padding them into cards
+ * to look busier than it is.
  */
 export default async function HomePage({
   params,
@@ -39,119 +38,154 @@ export default async function HomePage({
     listArticles(locale as Locale, { limit: 5 }),
   ]);
 
-  const dateFormat = new Intl.DateTimeFormat(localeHtmlLang[locale as Locale], {
-    year: "numeric",
-    month: "long",
+  const date = new Intl.DateTimeFormat(localeHtmlLang[locale as Locale], {
     day: "numeric",
+    month: "short",
+    year: "numeric",
     timeZone: "UTC",
   });
 
   return (
     <>
-      {/* 1 — Welcome */}
-      <section className="home-welcome">
+      <section className="shell welcome">
         <h1>{t("welcomeHeading")}</h1>
-        <p className="home-welcome__lede">{t("welcomeLede")}</p>
+        <p>{t("welcomeLede")}</p>
       </section>
 
-      {/* 2 — Latest Weekly */}
-      <section>
-        <div className="section-head">
-          <h2>{t("weeklyHeading")}</h2>
-          <Link href="/weekly">{t("seeAllWeekly")}</Link>
-        </div>
-        {posts.length === 0 ? (
-          <p>{t("noPosts")}</p>
-        ) : (
-          <ul className="article-list">
-            {posts.map((post) => (
-              <li key={post.id}>
-                <Link href={`/weekly/${post.author.handle}/${post.slug}`}>
-                  <span lang={localeHtmlLang[post.locale]}>{post.title}</span>
-                </Link>
-                <div className="article__meta">
-                  {post.author.fullName}
-                  {post.publishedAt &&
-                    ` · ${dateFormat.format(new Date(post.publishedAt))}`}
-                  {/*
-                    A post exists only in the languages it was written in, so
-                    the languages are stated rather than implied. This is the
-                    visible half of the rule that a language filter removes a
-                    post instead of translating it.
-                  */}
-                  {" · "}
-                  {post.availableLocales.map((l) => l.toUpperCase()).join(" / ")}
-                </div>
-                {post.excerpt && (
-                  <p lang={localeHtmlLang[post.locale]}>{post.excerpt}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="shell">
+        {/* 2 — This week */}
+        <section className="section">
+          <div className="section__head">
+            <h2>{t("weeklyHeading")}</h2>
+            <Link className="section__more" href="/weekly">
+              {t("seeAllWeekly")}
+            </Link>
+          </div>
 
-      {/* 3 — About the journal */}
-      <section className="home-about">
-        <h2>{t("aboutHeading")}</h2>
-        <div className="home-about__identity">
-          {/*
-            Logo slot. No asset has been supplied yet, so the journal name
-            stands in — deliberately, rather than shipping a placeholder image
-            that looks like a design decision.
-          */}
-          <p className="home-about__name">{journal.name}</p>
-        </div>
-        <p>{t("aboutScope")}</p>
-        <p>{t("aboutFocus")}</p>
-        <p>
-          <Link href="/about">{tNav("about")}</Link>
-          {" · "}
-          <Link href="/for-authors">{tNav("forAuthors")}</Link>
-        </p>
-      </section>
-
-      {/* 4 — Recently published */}
-      <section>
-        <div className="section-head">
-          <h2>{t("publishedHeading")}</h2>
-          <Link href="/issues">{t("seeAllIssues")}</Link>
-        </div>
-        {articles.length === 0 ? (
-          <p>{t("noArticles")}</p>
-        ) : (
-          <ul className="article-list">
-            {articles.map((article) => (
-              <li key={article.id}>
-                <Link href={`/articles/${article.slug}`}>
-                  <span lang={localeHtmlLang[article.titleLocale]}>
-                    {article.title}
+          {posts.length === 0 ? (
+            <p className="empty">{t("noPosts")}</p>
+          ) : (
+            <ol className="record">
+              {posts.map((post, i) => (
+                <li key={post.id}>
+                  <span className="record__index">
+                    {post.publishedAt
+                      ? date.format(new Date(post.publishedAt))
+                      : String(i + 1).padStart(2, "0")}
                   </span>
-                </Link>
-                <div className="article__meta">
-                  {article.volume !== null && article.number !== null
-                    ? tArticle("issueLine", {
-                        volume: article.volume,
-                        number: article.number,
-                        year: article.year ?? "",
-                      })
-                    : tNav("onlineFirst")}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  <div>
+                    <Link
+                      className="record__title"
+                      href={`/weekly/${post.author.handle}/${post.slug}`}
+                      lang={localeHtmlLang[post.locale]}
+                    >
+                      {post.title}
+                    </Link>
+                    <p className="record__meta">
+                      {post.author.fullName}
+                      {" · "}
+                      <Registers locales={post.availableLocales} />
+                    </p>
+                    {post.excerpt && (
+                      <p
+                        className="record__excerpt"
+                        lang={localeHtmlLang[post.locale]}
+                      >
+                        {post.excerpt}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
 
-      {/* 5 — Submit */}
-      <section className="home-submit">
-        <h2>{t("submitHeading")}</h2>
-        <p>{t("submitLede")}</p>
-        <p>
-          <Link className="button" href="/submit">
-            {tNav("submit")}
-          </Link>
-        </p>
+        {/* 3 — What the journal is */}
+        <section className="section">
+          <div className="section__head">
+            <h2>{t("aboutHeading")}</h2>
+            <Link className="section__more" href="/about">
+              {tNav("about")}
+            </Link>
+          </div>
+
+          <div className="about">
+            <div>
+              {/*
+                The identity is the name set as type — a wordmark, no symbol.
+                No placeholder image stands in for artwork that does not exist.
+              */}
+              <p className="about__name">
+                Silk Road <span>Economic Review</span>
+              </p>
+              <p className="record__meta">{journal.publisher}</p>
+            </div>
+            <div>
+              <p>{t("aboutScope")}</p>
+              <p>{t("aboutFocus")}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* 4 — Recently published */}
+        <section className="section">
+          <div className="section__head">
+            <h2>{t("publishedHeading")}</h2>
+            <Link className="section__more" href="/issues">
+              {t("seeAllIssues")}
+            </Link>
+          </div>
+
+          {articles.length === 0 ? (
+            <p className="empty">{t("noArticles")}</p>
+          ) : (
+            <ol className="record">
+              {articles.map((article) => (
+                <li key={article.id}>
+                  <span className="record__index">
+                    {article.volume !== null && article.number !== null
+                      ? `${article.volume}(${article.number})`
+                      : tNav("onlineFirst")}
+                  </span>
+                  <div>
+                    <Link
+                      className="record__title"
+                      href={`/articles/${article.slug}`}
+                      lang={localeHtmlLang[article.titleLocale]}
+                    >
+                      {article.title}
+                    </Link>
+                    <p className="record__meta">
+                      {article.firstPage !== null && article.lastPage !== null
+                        ? tArticle("pages", {
+                            first: article.firstPage,
+                            last: article.lastPage,
+                          })
+                        : article.publishedAt
+                          ? date.format(new Date(article.publishedAt))
+                          : ""}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
+
+      {/* 5 — Submit. A red field, matching the masthead: the journal opens and
+          closes with the same commitment. */}
+      <section className="submit-band">
+        <div className="shell">
+          <h2>{t("submitHeading")}</h2>
+          <p>{t("submitLede")}</p>
+          <p>
+            <Link className="button" href="/submit">
+              {tNav("submit")}
+            </Link>
+          </p>
+        </div>
       </section>
     </>
   );

@@ -1,0 +1,510 @@
+/*
+ * Admin — Operate.
+ *
+ * The editors live here, so scanability and familiar affordances outrank
+ * expression. It inherits the journal's palette and type but spends none of
+ * the masthead's drama: a red field behind a publishing form would be
+ * decoration in a place where every pixel should be carrying a control.
+ *
+ * Brand shows up in precise details — tabular numerals, the same rule
+ * structure, the same red reserved for the active state and for danger.
+ */
+
+.admin {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 6rem;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+}
+
+.admin-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 2px solid var(--rule-strong);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  margin-bottom: 2rem;
+}
+
+.admin h1 {
+  font-size: 1.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.admin h2 {
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-top: 1px solid var(--rule);
+  padding-top: 0.5rem;
+  margin: 2.5rem 0 1rem;
+}
+
+.admin ul {
+  padding-left: 1.1rem;
+}
+
+.admin-login {
+  max-width: 22rem;
+  margin: 5rem auto;
+}
+
+/* ── Forms ────────────────────────────────────────────────────────────── */
+
+.admin-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.admin-form label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+  font: inherit;
+  font-size: 0.9375rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+
+.admin-form input:focus,
+.admin-form select:focus,
+.admin-form textarea:focus {
+  border-color: var(--red);
+}
+
+.admin-form input[type="file"] {
+  border: 1px dashed var(--rule);
+  background: transparent;
+  padding: 0.6rem;
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.field-row label {
+  flex: 1 1 8rem;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.5rem 0;
+}
+
+.admin button,
+.admin-actions button {
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.admin button:hover:not([disabled]) {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.admin button[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* The primary action in any group is the committed colour. */
+.admin-actions button:last-child,
+.admin-form + div button[type="submit"],
+.admin button[type="submit"] {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--paper);
+}
+
+.admin-actions button:last-child:hover:not([disabled]),
+.admin button[type="submit"]:hover:not([disabled]) {
+  background: var(--red-deep);
+  border-color: var(--red-deep);
+}
+
+.admin-error {
+  font-size: 0.8125rem;
+  color: var(--red-deep);
+  background: var(--red-wash);
+  padding: 0.6rem 0.8rem;
+}
+
+.admin-ok {
+  font-size: 0.8125rem;
+  color: #1c5e38;
+}
+
+/* ── Tables and lists ─────────────────────────────────────────────────── */
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-table th {
+  text-align: left;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom: 2px solid var(--rule-strong);
+  padding: 0 0.75rem 0.4rem 0;
+}
+
+.admin-table td {
+  border-bottom: 1px solid var(--rule);
+  padding: 0.6rem 0.75rem 0.6rem 0;
+  vertical-align: top;
+}
+
+.admin-table a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-table a:hover {
+  text-decoration: underline;
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--rule);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+}
+
+.badge--new {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.badge--spam {
+  border-color: var(--rule);
+  color: var(--ink-3);
+}
+
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* ── Language tabs ────────────────────────────────────────────────────── */
+
+.lang-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 2rem 0 0;
+  border-bottom: 2px solid var(--rule-strong);
+}
+
+.lang-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-bottom: 0;
+  background: transparent;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.lang-tabs button:hover {
+  background: var(--paper-raised);
+  color: inherit;
+}
+
+.lang-tabs button.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* Which languages this record will exist in — information, not decoration. */
+.tab-dot {
+  font-size: 0.6rem;
+  color: var(--ink-3);
+}
+
+.tab-dot--on {
+  color: var(--red);
+}
+
+.lang-tabs button.is-active .tab-dot--on {
+  color: #f0cdc9;
+}
+
+.tab-primary {
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.editor-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+/* ── Author picker ────────────────────────────────────────────────────── */
+
+.author-list {
+  padding-left: 1.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.author-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.author-list__name {
+  min-width: 13rem;
+  font-weight: 600;
+}
+
+.author-list__corresponding {
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.author-list button {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.author-options {
+  list-style: none;
+  padding: 0;
+  margin: 0.3rem 0;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper-raised);
+}
+
+.author-options li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.author-options button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  padding: 0.45rem 0.6rem;
+  font-weight: 500;
+}
+
+.author-new {
+  border: 1px solid var(--rule);
+  padding: 1rem;
+  margin: 0.75rem 0;
+  background: var(--paper-raised);
+}
+
+/* ── Rich text editor ─────────────────────────────────────────────────── */
+
+.rich-text {
+  border: 1px solid var(--rule-strong);
+  background: var(--paper-raised);
+}
+
+.rich-text__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.35rem;
+  border-bottom: 1px solid var(--rule-strong);
+  background: var(--paper);
+}
+
+.rich-text__toolbar button {
+  min-width: 2rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.rich-text__toolbar button.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.rich-text__sep {
+  width: 1px;
+  height: 1.2rem;
+  margin: 0 0.35rem;
+  background: var(--rule);
+}
+
+.rich-text__surface {
+  min-height: 20rem;
+  padding: 1.25rem;
+  font-family: var(--serif);
+  font-size: 1.0625rem;
+  line-height: 1.62;
+  outline: none;
+}
+
+.rich-text__surface:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.rich-text__surface img {
+  max-width: 100%;
+  height: auto;
+}
+
+.rich-text__surface table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+}
+
+.rich-text__surface td,
+.rich-text__surface th {
+  border: 1px solid var(--rule);
+  padding: 0.35rem 0.5rem;
+}
+
+.rich-text__surface blockquote {
+  margin: 1.2rem 0;
+  padding-left: 1rem;
+  border-left: 1px solid var(--red);
+  color: var(--ink-2);
+}
+
+/* ── Proposals inbox ──────────────────────────────────────────────────── */
+
+.proposal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.proposal {
+  border-bottom: 1px solid var(--rule);
+}
+
+.proposal__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.8rem 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9375rem;
+}
+
+.proposal__summary:hover {
+  background: transparent;
+  color: var(--red);
+}
+
+.proposal__title {
+  font-weight: 600;
+}
+
+.proposal__detail {
+  padding: 0 0 1.25rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.proposal__detail dl {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.proposal__detail dt {
+  color: var(--ink-3);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.proposal__detail dd {
+  margin: 0 0 0.5rem;
+}
+
+.proposal__abstract {
+  white-space: pre-wrap;
+  font-family: var(--serif);
+  font-size: 1rem;
+  max-width: 34rem;
+  border-left: 1px solid var(--rule);
+  padding-left: 1rem;
+}
+
+.post-editor,
+.article-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (max-width: 40rem) {
+  .admin {
+    padding: 0 1rem 4rem;
+  }
+
+  .admin-table {
+    font-size: 0.8125rem;
+  }
+
+  .author-list__name {
+    min-width: 0;
+  }
+}

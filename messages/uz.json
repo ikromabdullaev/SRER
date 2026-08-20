@@ -1,7 +1,7 @@
 {
   "locale": {
     "en": "ingliz",
-    "uz": "o'zbek",
+    "uz": "oʼzbek",
     "ru": "rus"
   },
   "nav": {
@@ -13,41 +13,55 @@
     "about": "Jurnal haqida",
     "forAuthors": "Mualliflar uchun",
     "submit": "Taklif yuborish",
-    "skipToContent": "Asosiy qismga o'tish",
+    "skipToContent": "Asosiy qismga oʼtish",
     "languageSwitcher": "Til"
   },
   "home": {
     "title": "Bosh sahifa",
-    "welcomeHeading": "Markaziy Osiyo va Kavkaz iqtisodiyoti bo'yicha tadqiqotlar",
-    "welcomeLede": "O'zbekiston Iqtisodiyot Jamiyati nashr etadigan, taqrizdan o'tadigan ochiq kirishli jurnal. O'qish ham, nashr etish ham bepul.",
+    "welcomeHeading": "Markaziy Osiyo va Kavkaz iqtisodiyoti boʼyicha tadqiqotlar",
+    "welcomeLede": "Oʼzbekiston Iqtisodiyot Jamiyati nashr etadigan, taqrizdan oʼtadigan ochiq kirishli jurnal. Oʼqish ham, nashr etish ham bepul.",
     "weeklyHeading": "Shu hafta",
     "seeAllWeekly": "Barcha haftalik nashrlar",
-    "noPosts": "Hozircha nashrlar yo'q.",
+    "noPosts": "Hozircha nashrlar yoʼq.",
     "aboutHeading": "Jurnal haqida",
-    "aboutScope": "Biz iqtisodiyot bo'yicha original empirik va nazariy tadqiqotlarni, shuningdek siyosat sharhlari, taqriz maqolalari va amaliy tahlillarni nashr etamiz.",
-    "aboutFocus": "Asosiy yo'nalishimiz — Markaziy Osiyo va Kavkaz iqtisodiyoti: mintaqa haqidagi ishlar, mintaqa ma'lumotlariga asoslangan tadqiqotlar va qiyosiy tahlillar.",
-    "publishedHeading": "So'nggi nashrlar",
+    "aboutScope": "Biz iqtisodiyot boʼyicha original empirik va nazariy tadqiqotlarni, shuningdek siyosat sharhlari, taqriz maqolalari va amaliy tahlillarni nashr etamiz.",
+    "aboutFocus": "Asosiy yoʼnalishimiz — Markaziy Osiyo va Kavkaz iqtisodiyoti: mintaqa haqidagi ishlar, mintaqa maʼlumotlariga asoslangan tadqiqotlar va qiyosiy tahlillar.",
+    "publishedHeading": "Soʼnggi nashrlar",
     "seeAllIssues": "Barcha sonlar",
     "noArticles": "Hozircha maqolalar chop etilmagan.",
     "submitHeading": "Maqola taklif qilish",
-    "submitLede": "Takliflar yil davomida qabul qilinadi. Sarlavha va annotatsiya yuboring — muharrir siz bilan bog'lanadi. Hech qanday to'lov olinmaydi."
+    "submitLede": "Takliflar yil davomida qabul qilinadi. Sarlavha va annotatsiya yuboring — muharrir siz bilan bogʼlanadi. Hech qanday toʼlov olinmaydi."
   },
   "article": {
     "abstract": "Annotatsiya",
-    "keywords": "Kalit so'zlar",
-    "authors": "Mualliflar",
-    "downloadPdf": "PDF yuklab olish",
-    "pages": "{first}–{last}-betlar",
-    "published": "Nashr sanasi: {date}",
-    "received": "Qabul qilindi: {date}",
     "accepted": "Tasdiqlandi: {date}",
-    "licence": "Litsenziya",
-    "onlineFirstNotice": "Ushbu maqola onlayn nashr etilgan va hali biror songa kiritilmagan.",
-    "translationMissing": "Ushbu annotatsiya hozircha {language} tilida mavjud emas. U {shown} tilida ko'rsatilmoqda.",
-    "titleFallbackNotice": "Ushbu maqolaning {language} tilidagi tarjimasi mavjud emas. U {shown} tilida ko'rsatilmoqda.",
-    "correspondingAuthor": "Mas'ul muallif",
+    "authors": "Mualliflar",
+    "correspondingAuthor": "Masʼul muallif",
+    "downloadPdf": "PDF yuklab olish",
+    "issueLabel": "Son",
     "issueLine": "{volume}-jild, {number}-son ({year})",
-    "notFound": "Maqola topilmadi"
+    "keywords": "Kalit soʼzlar",
+    "licence": "Litsenziya",
+    "notFound": "Maqola topilmadi",
+    "onlineFirstNotice": "Ushbu maqola onlayn nashr etilgan va hali biror songa kiritilmagan.",
+    "pages": "{first}–{last}-betlar",
+    "pagesLabel": "Betlar",
+    "published": "Nashr sanasi: {date}",
+    "publishedLabel": "Nashr etilgan",
+    "received": "Qabul qilindi: {date}",
+    "titleFallbackNotice": "Ushbu maqolaning {language} tilidagi tarjimasi mavjud emas. U {shown} tilida koʼrsatilmoqda.",
+    "translationMissing": "Ushbu annotatsiya hozircha {language} tilida mavjud emas. U {shown} tilida koʼrsatilmoqda.",
+    "type": {
+      "book_review": "Kitob taqrizi",
+      "case_study": "Amaliy tahlil",
+      "correction": "Tuzatish",
+      "editorial": "Tahririyatdan",
+      "policy_note": "Siyosat sharhi",
+      "research_article": "Ilmiy maqola",
+      "retraction": "Chaqirib olish",
+      "review_article": "Sharh maqolasi"
+    },
+    "typeLabel": "Turi"
   },
   "issues": {
     "title": "Sonlar",
@@ -55,10 +69,10 @@
     "issueLine": "{volume}-jild, {number}-son",
     "year": "{year}",
     "contents": "Mundarija",
-    "empty": "Bu sonda hozircha maqolalar yo'q.",
+    "empty": "Bu sonda hozircha maqolalar yoʼq.",
     "none": "Hozircha sonlar nashr etilmagan.",
     "onlineFirstTitle": "Onlayn nashr",
-    "onlineFirstLede": "Songa kiritilishidan oldin nashr etilgan maqolalar. Ularning manzillari va PDF fayllari o'zgarmaydi."
+    "onlineFirstLede": "Songa kiritilishidan oldin nashr etilgan maqolalar. Ularning manzillari va PDF fayllari oʼzgarmaydi."
   },
   "weekly": {
     "title": "Haftalik",
@@ -67,7 +81,7 @@
     "availableIn": "Mavjud tillar",
     "filterLabel": "Til",
     "filterAll": "Barcha tillar",
-    "none": "Hozircha nashrlar yo'q.",
+    "none": "Hozircha nashrlar yoʼq.",
     "seriesTitle": "{name} haftalik nashrlari",
     "backToWeekly": "Barcha nashrlar",
     "notFound": "Nashr topilmadi"
@@ -78,7 +92,7 @@
     "affiliation": "Ish joyi",
     "orcid": "ORCID",
     "website": "Veb-sayt",
-    "noArticles": "Nashr etilgan maqolalar yo'q.",
+    "noArticles": "Nashr etilgan maqolalar yoʼq.",
     "notFound": "Muallif topilmadi"
   },
   "common": {
@@ -92,7 +106,7 @@
     "filterType": "Turi",
     "filterYear": "Yil",
     "next": "Keyingi",
-    "noResults": "Hech narsa topilmadi. Kamroq so'z bilan yoki barcha tillarda qidiring.",
+    "noResults": "Hech narsa topilmadi. Kamroq soʼz bilan yoki barcha tillarda qidiring.",
     "pageOf": "{total} dan {page}-sahifa",
     "previous": "Oldingi",
     "queryLabel": "Maqolalarni qidirish",
@@ -101,7 +115,7 @@
     "submit": "Qidirish",
     "title": "Qidiruv",
     "weeklyNote": "Haftalik nashrlar maqolalardan alohida qidiriladi.",
-    "weeklyTitle": "Haftalik bo'yicha qidiruv"
+    "weeklyTitle": "Haftalik boʼyicha qidiruv"
   },
   "submit": {
     "abstract": "Annotatsiya",
@@ -128,5 +142,14 @@
     "successHeading": "Taklif qabul qilindi",
     "title": "Maqola taklif qilish",
     "uploading": "Yuklanmoqda…"
+  },
+  "footer": {
+    "board": "Tahririyat kengashi",
+    "journal": "Jurnal",
+    "legal": "Nashr etuvchi: {publisher}. Maqolalar mualliflarga tegishli.",
+    "machines": "Mashinalar uchun",
+    "noFees": "Oʻqish va nashr bepul",
+    "openAccess": "Ochiq kirish",
+    "read": "Oʻqish"
   }
 }

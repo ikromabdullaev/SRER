@@ -34,20 +34,34 @@
   },
   "article": {
     "abstract": "Аннотация",
-    "keywords": "Ключевые слова",
-    "authors": "Авторы",
-    "downloadPdf": "Скачать PDF",
-    "pages": "С. {first}–{last}",
-    "published": "Опубликовано {date}",
-    "received": "Поступила {date}",
     "accepted": "Принята {date}",
-    "licence": "Лицензия",
-    "onlineFirstNotice": "Статья опубликована онлайн и ещё не включена в выпуск.",
-    "translationMissing": "Аннотация пока недоступна на {language} языке. Она показана на {shown} языке.",
-    "titleFallbackNotice": "Статья недоступна на {language} языке. Она показана на {shown} языке.",
+    "authors": "Авторы",
     "correspondingAuthor": "Автор для переписки",
+    "downloadPdf": "Скачать PDF",
+    "issueLabel": "Выпуск",
     "issueLine": "Том {volume}, № {number} ({year})",
-    "notFound": "Статья не найдена"
+    "keywords": "Ключевые слова",
+    "licence": "Лицензия",
+    "notFound": "Статья не найдена",
+    "onlineFirstNotice": "Статья опубликована онлайн и ещё не включена в выпуск.",
+    "pages": "С. {first}–{last}",
+    "pagesLabel": "Страницы",
+    "published": "Опубликовано {date}",
+    "publishedLabel": "Опубликовано",
+    "received": "Поступила {date}",
+    "titleFallbackNotice": "Статья недоступна на {language} языке. Она показана на {shown} языке.",
+    "translationMissing": "Аннотация пока недоступна на {language} языке. Она показана на {shown} языке.",
+    "type": {
+      "book_review": "Рецензия на книгу",
+      "case_study": "Кейс-стади",
+      "correction": "Исправление",
+      "editorial": "От редакции",
+      "policy_note": "Аналитическая записка",
+      "research_article": "Научная статья",
+      "retraction": "Отзыв статьи",
+      "review_article": "Обзорная статья"
+    },
+    "typeLabel": "Тип"
   },
   "issues": {
     "title": "Выпуски",
@@ -128,5 +142,14 @@
     "successHeading": "Заявка получена",
     "title": "Предложить статью",
     "uploading": "Загрузка…"
+  },
+  "footer": {
+    "board": "Редакционная коллегия",
+    "journal": "Журнал",
+    "legal": "Издаётся {publisher}. Права на статьи принадлежат их авторам.",
+    "machines": "Для машин",
+    "noFees": "Чтение и публикация бесплатны",
+    "openAccess": "Открытый доступ",
+    "read": "Читать"
   }
 }

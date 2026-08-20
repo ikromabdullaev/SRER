@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { hasLocale } from "next-intl";
 import { routing, localeHtmlLang, type Locale } from "@/i18n/routing";
+import { Link } from "@/i18n/navigation";
 import { getArticle, getPublishedSlugs } from "@/lib/articles";
 import {
   canonicalArticleUrl,
@@ -17,9 +18,13 @@ import { journal } from "@/config/journal";
  *
  * Everything here is server-rendered into the initial HTML. A client fetch of
  * any of this metadata means Google Scholar sees an empty document and the
- * journal is invisible — which is the failure the whole architecture is shaped
- * to avoid. Verify by viewing source, not devtools: devtools shows the
- * hydrated DOM, which is exactly the thing that would lie to you here.
+ * journal is invisible. Verify by viewing source, not devtools: devtools shows
+ * the hydrated DOM, which is exactly the thing that would lie to you here.
+ *
+ * The composition is the scientific-publication setting: the reading column
+ * holds the argument, the facts column holds the record. Every row in that
+ * column is one fact — issue, pages, dates, licence — and nothing in it is
+ * ornament.
  */
 
 export const dynamicParams = false;
@@ -43,11 +48,9 @@ export async function generateMetadata({
   if (!article) return {};
 
   return {
-    title: article.title,
+    title: `${article.title} — ${journal.name}`,
     description: article.abstract ?? undefined,
     alternates: {
-      // The canonical page is the primary-language one. Non-canonical locale
-      // pages carry the full hreflang set and point their canonical here.
       canonical: canonicalArticleUrl(article),
       languages: hreflangAlternates(article.slug),
     },
@@ -83,134 +86,187 @@ export default async function ArticlePage({
   const isCanonical = locale === article.primaryLanguage;
   const tags = isCanonical ? citationTags(article) : [];
 
-  const dateFormat = new Intl.DateTimeFormat(localeHtmlLang[locale as Locale], {
+  const longDate = new Intl.DateTimeFormat(localeHtmlLang[locale as Locale], {
     year: "numeric",
     month: "long",
     day: "numeric",
     timeZone: "UTC",
   });
 
+  const abstractLocale = article.abstractLocale ?? article.primaryLanguage;
+
   return (
-    <article>
-      {/*
-        React hoists these into <head>. They are written as JSX rather than
-        going through `metadata.other` because that groups tags by name, and
-        `citation_author_institution` has to follow the author it belongs to.
-      */}
-      {tags.map((tag, i) => (
-        <meta key={`${tag.name}-${i}`} name={tag.name} content={tag.content} />
-      ))}
-
-      <script
-        type="application/ld+json"
-        // Server-rendered constant derived from our own database, not user input.
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(articleJsonLd(article)),
-        }}
-      />
-
-      <h1 lang={localeHtmlLang[article.titleLocale]}>{article.title}</h1>
-
-      {article.translationMissing && (
-        <p className="notice">
-          {t("titleFallbackNotice", {
-            language: tLocale(locale as Locale),
-            shown: tLocale(article.titleLocale),
-          })}
-        </p>
-      )}
-
-      <p className="article__meta">
-        {article.volume !== null && article.number !== null ? (
-          <span>
-            {t("issueLine", {
-              volume: article.volume,
-              number: article.number,
-              year: article.year ?? "",
-            })}
-          </span>
-        ) : (
-          <span>{t("onlineFirstNotice")}</span>
-        )}
-        {article.firstPage !== null && article.lastPage !== null && (
-          <>
-            {" · "}
-            {t("pages", { first: article.firstPage, last: article.lastPage })}
-          </>
-        )}
-        {article.publishedAt && (
-          <>
-            {" · "}
-            {t("published", { date: dateFormat.format(new Date(article.publishedAt)) })}
-          </>
-        )}
-      </p>
-
-      <h2>{t("authors")}</h2>
-      <ul className="article__authors">
-        {article.authors.map((author) => (
-          <li key={author.id}>
-            {author.displayName}
-            {author.isCorresponding && ` (${t("correspondingAuthor")})`}
-            {author.affiliation && (
-              <div className="article__affiliation">{author.affiliation}</div>
-            )}
-          </li>
+    <div className="shell">
+      <article className="article">
+        {/*
+          React hoists these into <head>. They are written as JSX rather than
+          going through `metadata.other` because that groups tags by name, and
+          citation_author_institution has to follow the author it belongs to.
+        */}
+        {tags.map((tag, i) => (
+          <meta key={`${tag.name}-${i}`} name={tag.name} content={tag.content} />
         ))}
-      </ul>
 
-      {article.pdfUrl && (
-        <p>
-          {/*
-            Direct, permanent, unauthenticated link to the PDF (§5.1). No
-            redirect, no signed URL, no expiry — this is the same URL as
-            citation_pdf_url, and Scholar follows it.
-          */}
-          <a href={article.pdfUrl}>{t("downloadPdf")}</a>
-        </p>
-      )}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(articleJsonLd(article)),
+          }}
+        />
 
-      <h2>{t("abstract")}</h2>
-      {article.abstract ? (
-        <>
-          {article.abstractLocale !== locale && (
+        <div>
+          <h1 lang={localeHtmlLang[article.titleLocale]}>{article.title}</h1>
+
+          {article.translationMissing && (
             <p className="notice">
-              {t("translationMissing", {
+              {t("titleFallbackNotice", {
                 language: tLocale(locale as Locale),
-                shown: tLocale(article.abstractLocale ?? article.primaryLanguage),
+                shown: tLocale(article.titleLocale),
               })}
             </p>
           )}
-          <p lang={localeHtmlLang[article.abstractLocale ?? article.primaryLanguage]}>
-            {article.abstract}
-          </p>
-        </>
-      ) : (
-        <p className="notice">
-          {t("translationMissing", {
-            language: tLocale(locale as Locale),
-            shown: tLocale(article.primaryLanguage),
-          })}
-        </p>
-      )}
 
-      {article.keywords.length > 0 && (
-        <>
-          <h2>{t("keywords")}</h2>
-          <ul
-            className="keywords"
-            lang={localeHtmlLang[article.keywordsLocale ?? article.primaryLanguage]}
-          >
-            {article.keywords.map((keyword) => (
-              <li key={keyword}>{keyword}</li>
+          <ul className="authors">
+            {article.authors.map((author) => (
+              <li key={author.id}>
+                <span className="authors__name">{author.displayName}</span>
+                {author.isCorresponding && (
+                  <>
+                    {" "}
+                    <span className="authors__corr">
+                      {t("correspondingAuthor")}
+                    </span>
+                  </>
+                )}
+                {author.affiliation && (
+                  <div className="authors__affil">{author.affiliation}</div>
+                )}
+              </li>
             ))}
           </ul>
-        </>
-      )}
 
-      <p className="article__meta">
-        {t("licence")}: {article.license}
-      </p>
-    </article>
+          <h2>{t("abstract")}</h2>
+
+          {article.abstract ? (
+            <>
+              {abstractLocale !== locale && (
+                <p className="notice">
+                  {t("translationMissing", {
+                    language: tLocale(locale as Locale),
+                    shown: tLocale(abstractLocale),
+                  })}
+                </p>
+              )}
+              <p className="abstract" lang={localeHtmlLang[abstractLocale]}>
+                {article.abstract}
+              </p>
+            </>
+          ) : (
+            <p className="notice">
+              {t("translationMissing", {
+                language: tLocale(locale as Locale),
+                shown: tLocale(article.primaryLanguage),
+              })}
+            </p>
+          )}
+
+          {article.keywords.length > 0 && (
+            <>
+              <h2>{t("keywords")}</h2>
+              <ul
+                className="keywords"
+                lang={localeHtmlLang[article.keywordsLocale ?? article.primaryLanguage]}
+              >
+                {article.keywords.map((keyword) => (
+                  <li key={keyword}>{keyword}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+
+        {/* The record. One fact per row; nothing here is decoration. */}
+        <aside>
+          {article.pdfUrl && (
+            <p>
+              {/*
+                Direct, permanent, unauthenticated (SPEC.md §5.1). Same URL as
+                citation_pdf_url, and Scholar follows it.
+              */}
+              <a className="pdf" href={article.pdfUrl}>
+                {t("downloadPdf")}
+              </a>
+            </p>
+          )}
+
+          <dl className="facts">
+            {/* The article's kind is a fact about it, listed with the other
+                facts. It was briefly an eyebrow above the title, which is a
+                label telling you what you are about to read instead of
+                letting the title do it. */}
+            <div>
+              <dt>{t("typeLabel")}</dt>
+              <dd>{t(`type.${article.type}` as "type.research_article")}</dd>
+            </div>
+
+            {article.volume !== null && article.number !== null ? (
+              <div>
+                <dt>{t("issueLabel")}</dt>
+                <dd>
+                  <Link href={`/issues/${article.volume}/${article.number}`}>
+                    {t("issueLine", {
+                      volume: article.volume,
+                      number: article.number,
+                      year: article.year ?? "",
+                    })}
+                  </Link>
+                </dd>
+              </div>
+            ) : (
+              <div>
+                <dt>{t("issueLabel")}</dt>
+                <dd>{t("onlineFirstNotice")}</dd>
+              </div>
+            )}
+
+            {article.firstPage !== null && article.lastPage !== null && (
+              <div>
+                <dt>{t("pagesLabel")}</dt>
+                <dd>
+                  {article.firstPage}–{article.lastPage}
+                </dd>
+              </div>
+            )}
+
+            {article.publishedAt && (
+              <div>
+                <dt>{t("publishedLabel")}</dt>
+                <dd>
+                  <time dateTime={article.publishedAt}>
+                    {longDate.format(new Date(article.publishedAt))}
+                  </time>
+                </dd>
+              </div>
+            )}
+
+            {article.jelCodes.length > 0 && (
+              <div>
+                <dt>JEL</dt>
+                <dd>{article.jelCodes.join(", ")}</dd>
+              </div>
+            )}
+
+            <div>
+              <dt>{t("licence")}</dt>
+              <dd>
+                <a href={journal.license.url} rel="license">
+                  {article.license}
+                </a>
+              </dd>
+            </div>
+          </dl>
+        </aside>
+      </article>
+    </div>
   );
 }
