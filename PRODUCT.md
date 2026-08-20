@@ -113,6 +113,12 @@ Two things a neighbouring journal could not truthfully copy:
 - **What a withdrawn article does** (tombstone versus removal) is unresolved,
   and the OAI-PMH deletion policy currently declares that no deletion
   information is maintained.
+- **The peer review model is not settled** — single-anonymous, double-anonymous
+  or open. DOAJ requires it stated explicitly and it must describe what
+  actually happens, so it cannot be inferred from convention.
+- **No archiving arrangement exists.** DOAJ asks how articles survive the site
+  disappearing. Until one is in place the policy page must say so plainly
+  rather than implying preservation that is not happening.
 
 ## Brand Commitments
 
@@ -137,9 +143,14 @@ scaffold SVGs, which are not assets.
   invented titles and authors used to test locale fallback and access control.
   They are not content and must never be presented as such.
 - **No editorial board.** Names and affiliations are still being assembled.
+  It will be small — fewer than ten people — so each member can be presented
+  properly rather than compressed into a directory row.
 - **No policy pages.** Aims and scope, peer review policy, publication ethics,
   archiving, authorship and conflict of interest are all unwritten. DOAJ reads
   these closely, and the navigation currently links to routes that do not exist.
+  Drafts may be written for the editors to approve, but two sections cannot be
+  drafted at all until the decisions above are made: the review model and the
+  archiving arrangement. Those must read as pending, never as settled.
 - **No institutional endorsements, metrics, indexing badges, or press.**
 
 Future work must not fabricate any of this. No invented article counts, no
