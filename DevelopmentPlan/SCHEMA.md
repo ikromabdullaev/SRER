@@ -1,0 +1,724 @@
+# SCHEMA.md — Database
+
+> Postgres via Supabase. This file is the source of truth for the data model.
+> Change it deliberately; regenerate TypeScript types after every migration.
+>
+> Companion to `SPEC.md`, which governs scope and behaviour.
+
+---
+
+## Open decisions
+
+One unresolved question in `SPEC.md` under **Open decisions** still changes this
+file when answered: **D3** (whether a withdrawn article is a tombstone, which
+changes the RLS predicate from `state = 'published'` to
+`state in ('published', 'withdrawn')`).
+Everything else below is settled. DOIs are out of scope for now, so `doi`
+stays nullable with no constraint requiring it.
+
+---
+
+## Design principles
+
+1. **`proposals` and `articles` are different things.** A proposal is an inbound
+   enquiry. An article is a published record. A proposal does not become an
+   article through a status flag — an editor reads it, contacts the author
+   offline, and eventually creates an article. Keeping them separate keeps every
+   public query trivially safe.
+
+2. **Translations live in their own tables, not JSONB columns.** JSONB looks
+   tidy for a week, then you can't index it for full-text search or answer "which
+   articles are missing a Russian abstract?" without pain.
+
+3. **Authors are entities, not strings.** Never store an author list as text.
+   Author names need per-locale forms (`Karimov` / `Каримов`), and author pages
+   require a stable identity across issues.
+
+4. **Unused tables are cheap; wrong relationships are expensive.** `reviews` and
+   `editorial_decisions` are defined here and unused in v1. Getting the shape
+   right now costs nothing.
+
+---
+
+## Extensions
+
+```sql
+create extension if not exists "uuid-ossp";
+create extension if not exists pg_trgm;      -- Uzbek trigram search
+create extension if not exists unaccent;
+```
+
+## Immutable helpers
+
+`array_to_string()` is **STABLE, not IMMUTABLE** — array element output
+functions are not guaranteed immutable — so it cannot appear in a generated
+column or an index expression. Postgres rejects the table outright with
+*"generation expression is not immutable"*. Wrap it:
+
+```sql
+create or replace function immutable_array_to_string(arr text[], sep text)
+returns text language sql immutable parallel safe as $$
+  select array_to_string(arr, sep);
+$$;
+```
+
+`unaccent()` is STABLE for the same class of reason (it resolves a dictionary by
+name at call time). If accent-insensitive matching is wanted in the trigram
+indexes, pin the dictionary and wrap it the same way — see open decision **D8**:
+
+```sql
+create or replace function immutable_unaccent(t text)
+returns text language sql immutable parallel safe as $$
+  select unaccent('unaccent'::regdictionary, t);
+$$;
+```
+
+## Enums
+
+```sql
+create type locale_code   as enum ('en', 'uz', 'ru');
+create type article_type  as enum (
+  'research_article', 'review_article', 'case_study',
+  'policy_note', 'book_review', 'editorial', 'correction', 'retraction'
+);
+create type publish_state as enum ('draft', 'published', 'withdrawn');
+create type proposal_state as enum ('new', 'contacted', 'accepted', 'declined', 'spam');
+create type user_role     as enum ('admin', 'editor');
+create type review_recommendation as enum (
+  'accept', 'minor_revision', 'major_revision', 'reject'
+);
+```
+
+> `locale_code` is an enum on purpose. Adding a fourth language should be a
+> deliberate migration, not an accident.
+
+---
+
+## Core tables
+
+### `profiles`
+
+Admin and editor accounts. Keyed to Supabase `auth.users`.
+
+```sql
+create table profiles (
+  id          uuid primary key references auth.users(id) on delete cascade,
+  full_name   text not null,
+  role        user_role not null default 'editor',
+  created_at  timestamptz not null default now()
+);
+```
+
+### `issues`
+
+```sql
+create table issues (
+  id                uuid primary key default uuid_generate_v4(),
+  volume            int not null,
+  number            int not null,
+  year              int not null,
+  published_at      timestamptz,
+  state             publish_state not null default 'draft',
+  cover_image_url   text,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  unique (volume, number)
+);
+
+create table issue_translations (
+  issue_id    uuid not null references issues(id) on delete cascade,
+  locale      locale_code not null,
+  title       text,          -- optional: special-issue titles
+  description text,
+  primary key (issue_id, locale)
+);
+```
+
+### `articles`
+
+```sql
+create table articles (
+  id                uuid primary key default uuid_generate_v4(),
+  slug              text not null unique,
+  doi               text unique,
+  issue_id          uuid references issues(id) on delete set null,  -- null = online first
+  position          int,                     -- order within the issue TOC
+  primary_language  locale_code not null,    -- language of the PDF full text
+  type              article_type not null default 'research_article',
+  pdf_url           text,                    -- permanent, public, unsigned
+  pdf_size_bytes    bigint,
+  first_page        int,
+  last_page         int,
+  jel_codes         text[] not null default '{}',
+  license           text not null default 'CC BY 4.0',
+  state             publish_state not null default 'draft',
+  published_at      timestamptz,
+  received_at       date,                    -- for the "Received / Accepted" line
+  accepted_at       date,
+  supersedes_id     uuid references articles(id),  -- corrections / retractions
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+
+  constraint published_needs_date
+    check (state <> 'published' or published_at is not null),
+  constraint published_needs_pdf
+    check (state <> 'published' or pdf_url is not null),
+  constraint sane_pages
+    check (last_page is null or first_page is null or last_page >= first_page)
+);
+```
+
+**`slug`, `doi`, and `pdf_url` are immutable after publication.** All three are
+permanence-constrained by `SPEC.md` §5.7 — `citation_pdf_url` and the DOI
+resource URL must never change. Enforce in application code and with the
+`guard_permanent_identifiers` trigger below.
+
+**A published article must carry a title.** Nothing in this table can express
+that, because titles live in `article_translations`; the constraint trigger
+below does it. Without it a published article can have zero translation rows,
+the localised view returns `title = NULL`, and `citation_title` — the one tag
+the entire project exists to emit — goes out empty.
+
+**DOIs are out of scope at this stage** (`SPEC.md` §2). `doi` stays nullable and
+nothing populates it. The column and its guard are kept because they cost
+nothing and make adoption later a plain `UPDATE`: the trigger locks a DOI only
+once assigned (`old.doi is not null`), so a published article can receive one
+afterwards but never have it changed. Verified against a live database.
+
+### `article_translations`
+
+```sql
+create table article_translations (
+  article_id    uuid not null references articles(id) on delete cascade,
+  locale        locale_code not null,
+  title         text not null,
+  abstract      text,
+  keywords      text[] not null default '{}',
+
+  search_vector tsvector generated always as (
+    setweight(
+      to_tsvector(
+        case locale
+          when 'en' then 'english'::regconfig
+          when 'ru' then 'russian'::regconfig
+          else 'simple'::regconfig
+        end,
+        coalesce(title, '')
+      ), 'A')
+    ||
+    setweight(
+      to_tsvector(
+        case locale
+          when 'en' then 'english'::regconfig
+          when 'ru' then 'russian'::regconfig
+          else 'simple'::regconfig
+        end,
+        coalesce(abstract, '')
+      ), 'B')
+    ||
+    setweight(
+      to_tsvector(
+        case locale
+          when 'en' then 'english'::regconfig
+          when 'ru' then 'russian'::regconfig
+          else 'simple'::regconfig
+        end,
+        immutable_array_to_string(keywords, ' ')
+      ), 'A')
+  ) stored,
+
+  primary key (article_id, locale)
+);
+```
+
+> The `::regconfig` casts matter. `to_tsvector(text, text)` is only STABLE and
+> will be rejected in a generated column; `to_tsvector(regconfig, text)` is
+> IMMUTABLE and works. `immutable_array_to_string` is the same trap one level
+> down — see **Immutable helpers** above. Verify the whole expression compiles
+> against a scratch database before building anything on top of it.
+
+> `uz` uses the `simple` config because Postgres ships no Uzbek dictionary. That
+> means no stemming — `iqtisodiyot` will not match `iqtisodiyotning`. The
+> trigram indexes below compensate. This is a morphology limitation, unrelated to
+> the Latin-script decision.
+
+### `authors`
+
+```sql
+create table authors (
+  id            uuid primary key default uuid_generate_v4(),
+  family_name   text not null,     -- Latin, canonical
+  given_name    text not null,     -- Latin, canonical
+  orcid         text unique,
+  email         text,
+  website_url   text,
+  created_at    timestamptz not null default now(),
+
+  constraint orcid_format
+    check (orcid is null or orcid ~ '^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$')
+);
+
+create table author_translations (
+  author_id     uuid not null references authors(id) on delete cascade,
+  locale        locale_code not null,
+  display_name  text not null,   -- 'Karimov, Aziz' / 'Каримов, Азиз'
+  affiliation   text,
+  primary key (author_id, locale)
+);
+
+create table article_authors (
+  article_id      uuid not null references articles(id) on delete cascade,
+  author_id       uuid not null references authors(id) on delete restrict,
+  position        int not null,          -- 1-based author order
+  is_corresponding boolean not null default false,
+  primary key (article_id, author_id),
+  constraint article_authors_position_unique
+    unique (article_id, position) deferrable initially deferred
+);
+```
+
+The position constraint is **deferrable** on purpose. The reorderable author
+repeater in `SPEC.md` §7.1 swaps two positions in one transaction, which
+transiently duplicates a value; a non-deferrable unique constraint rejects that
+and forces a temp-value dance in application code.
+
+`authors.family_name` and `given_name` are the **Latin canonical** forms used for
+`citation_author` meta tags and Crossref deposits. Localised display forms live
+in `author_translations`.
+
+### `proposals`
+
+```sql
+create table proposals (
+  id            uuid primary key default uuid_generate_v4(),
+  name          text not null,
+  email         text not null,
+  affiliation   text,
+  title         text not null,
+  abstract      text not null,
+  locale        locale_code not null,    -- intended publication language
+  file_url      text,                    -- PRIVATE bucket
+  coauthor_note text,
+  state         proposal_state not null default 'new',
+  admin_notes   text,
+  source_ip     inet,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+```
+
+---
+
+## Defined but unused in v1
+
+Create these. Do not build features against them.
+
+```sql
+create table reviews (
+  id              uuid primary key default uuid_generate_v4(),
+  article_id      uuid not null references articles(id) on delete cascade,
+  reviewer_id     uuid references profiles(id),
+  round           int not null default 1,
+  recommendation  review_recommendation,
+  comments_to_author text,
+  comments_to_editor text,
+  due_at          timestamptz,
+  submitted_at    timestamptz,
+  created_at      timestamptz not null default now()
+);
+
+create table editorial_decisions (
+  id            uuid primary key default uuid_generate_v4(),
+  article_id    uuid not null references articles(id) on delete cascade,
+  editor_id     uuid references profiles(id),
+  round         int not null default 1,
+  decision      review_recommendation not null,
+  note          text,
+  decided_at    timestamptz not null default now()
+);
+```
+
+---
+
+## Indexes
+
+```sql
+-- Full-text, per locale
+create index article_translations_fts_idx
+  on article_translations using gin (search_vector);
+
+-- Trigram fallback, matters most for Uzbek (no stemmer)
+create index article_translations_title_trgm_idx
+  on article_translations using gin (title gin_trgm_ops);
+create index article_translations_abstract_trgm_idx
+  on article_translations using gin (abstract gin_trgm_ops);
+
+-- Author name search
+create index author_translations_name_trgm_idx
+  on author_translations using gin (display_name gin_trgm_ops);
+create index authors_family_trgm_idx
+  on authors using gin (family_name gin_trgm_ops);
+
+-- Common access paths
+create index articles_published_idx
+  on articles (published_at desc) where state = 'published';
+create index articles_issue_idx  on articles (issue_id, position);
+create index articles_type_idx   on articles (type) where state = 'published';
+create index articles_jel_idx    on articles using gin (jel_codes);
+create index article_authors_author_idx on article_authors (author_id);
+create index proposals_state_idx on proposals (state, created_at desc);
+
+-- "Which articles are missing a Russian abstract?" — the (article_id, locale)
+-- primary key cannot serve a locale-first scan.
+create index article_translations_locale_idx
+  on article_translations (locale);
+```
+
+---
+
+## Row Level Security
+
+Enable RLS on **every** table. Public read is an explicit policy.
+
+```sql
+alter table articles              enable row level security;
+alter table article_translations  enable row level security;
+alter table issues                enable row level security;
+alter table issue_translations    enable row level security;
+alter table authors               enable row level security;
+alter table author_translations   enable row level security;
+alter table article_authors       enable row level security;
+alter table proposals             enable row level security;
+alter table profiles              enable row level security;
+alter table reviews               enable row level security;
+alter table editorial_decisions   enable row level security;
+
+-- Helpers. A `security definer` function must pin its search_path, or a caller
+-- can shadow `profiles` with a temp table and promote themselves to staff.
+create or replace function is_staff() returns boolean
+language sql stable security definer
+set search_path = public, pg_temp as $$
+  select exists (select 1 from profiles where id = auth.uid());
+$$;
+
+create or replace function is_admin() returns boolean
+language sql stable security definer
+set search_path = public, pg_temp as $$
+  select exists (
+    select 1 from profiles where id = auth.uid() and role = 'admin'
+  );
+$$;
+
+-- Public sees published articles only
+create policy "public reads published articles"
+  on articles for select
+  using (state = 'published');
+
+create policy "public reads translations of published articles"
+  on article_translations for select
+  using (exists (
+    select 1 from articles a
+    where a.id = article_id and a.state = 'published'
+  ));
+
+create policy "public reads published issues"
+  on issues for select using (state = 'published');
+
+-- Authors and their translations are public (needed for author pages).
+create policy "public reads authors" on authors for select using (true);
+create policy "public reads author translations"
+  on author_translations for select using (true);
+
+-- RLS cannot hide a *column*, and `authors.email` is editorial contact data: a
+-- table-wide select policy publishes a harvestable list of academic emails
+-- through PostgREST. Withhold it with a column-level grant.
+revoke select on authors from anon;
+grant select (id, family_name, given_name, orcid, website_url, created_at)
+  on authors to anon;
+-- Consequence: `select *` on authors now fails for anon with "permission denied
+-- for table authors". Public queries must name the columns — in supabase-js,
+-- .select('id, family_name, given_name'), never .select('*').
+
+-- Article-author links are public only for published articles. `using (true)`
+-- here would let anon enumerate the ids of unpublished drafts.
+create policy "public reads article authors of published articles"
+  on article_authors for select
+  using (exists (
+    select 1 from articles a
+    where a.id = article_id and a.state = 'published'
+  ));
+
+-- Staff full access
+create policy "staff manage articles" on articles
+  for all using (is_staff()) with check (is_staff());
+-- ...repeat for every content table...
+
+-- Profiles. There is no public signup: staff accounts are provisioned by
+-- inviting the user in the Supabase dashboard, which creates the `auth.users`
+-- row; the trigger below mirrors it into `profiles` as an `editor`. Role
+-- changes are user management, which SPEC.md §7.4 reserves to `admin` — the
+-- only place that distinction is enforceable is here, not in the UI.
+create policy "staff read profiles" on profiles
+  for select using (is_staff());
+create policy "admins manage profiles" on profiles
+  for all using (is_admin()) with check (is_admin());
+
+-- Proposals: written server-side only, staff read.
+--
+-- There is deliberately NO anon insert policy. `insert with check (true)` lets
+-- anyone set `state`, `admin_notes`, and `source_ip` to whatever they like,
+-- which makes `source_ip` worthless for the rate limit SPEC.md §8 requires. The
+-- public form posts to a Route Handler that inserts with the service-role key,
+-- so the server owns the IP and the initial state. The private proposals
+-- bucket already forces a server-side step, so this costs nothing.
+create policy "staff read proposals"
+  on proposals for select using (is_staff());
+create policy "staff update proposals"
+  on proposals for update using (is_staff());
+```
+
+Draft articles must be invisible to the anon key. Verify this explicitly with a
+test — it is the single most likely security mistake in this project.
+
+**RLS does not protect a view by default.** A view executes with its *owner's*
+privileges, and views in `public` are owned by a privileged role and exposed
+through PostgREST — so a plain view over `articles` bypasses every policy above.
+Every view here must be declared `with (security_invoker = true)` (Postgres 15+),
+and the RLS test must query the **views** with the anon key, not only the
+tables.
+
+---
+
+## Storage buckets
+
+| Bucket | Access | Contents |
+|---|---|---|
+| `articles` | **Public** | Published PDFs. Permanent paths, no signed URLs. |
+| `covers` | Public | Issue cover images. |
+| `proposals` | **Private** | Uploaded proposal files. Signed URLs for staff only. |
+
+Paths below are **within** the bucket — the first segment is a folder in the
+`articles` bucket, not the bucket name repeated. The resulting public URL is
+`{SUPABASE_URL}/storage/v1/object/public/articles/v1/n1/{slug}.pdf`.
+
+PDF path convention: `v{volume}/n{number}/{slug}.pdf`. For online-first
+articles: `online-first/{slug}.pdf` — and **do not move it** when the article is
+later assigned to an issue. `citation_pdf_url` must never change, and the
+`guard_permanent_identifiers` trigger enforces that.
+
+The `proposals` bucket is private, so anonymous submitters cannot upload to it
+directly and a 20 MB file cannot pass through a Vercel function body. The
+upload goes through a signed upload URL minted server-side — see `SPEC.md` §8.
+
+---
+
+## Views
+
+Implements the **full** fallback chain from `SPEC.md` §4.3 — requested locale →
+`primary_language` → `en` → any available — and does it **per field**, not per
+row. Field-level matters because a half-filled translation row is the normal
+case: `SPEC.md` §7.1 lets an editor save a tab with a title and no abstract, and
+a row-level `coalesce` would then return that row's empty abstract instead of
+falling through. `keywords` needs the cardinality test for the same reason — it
+is `not null default '{}'`, so an empty array is not NULL and defeats `coalesce`.
+
+```sql
+-- Fallback priority for one candidate locale. Immutable so it can be used in
+-- an ORDER BY without blocking inlining.
+create or replace function locale_rank(
+  candidate locale_code, requested locale_code, primary_lang locale_code
+) returns int language sql immutable parallel safe as $$
+  select case candidate
+           when requested    then 1
+           when primary_lang then 2
+           when 'en'         then 3
+           else 4
+         end;
+$$;
+
+-- Everything an article page needs, one row per article per locale, with the
+-- locale fallback chain already resolved. security_invoker is mandatory: see
+-- the note under Row Level Security.
+--
+-- One lateral per field, not one per row: each picks the best-ranked
+-- translation that actually has a value for that field, so a half-filled row
+-- contributes its title without also contributing its empty abstract.
+create view published_articles_localised
+with (security_invoker = true) as
+select
+  a.id, a.slug, a.doi, a.issue_id, a.position,
+  a.primary_language, a.type, a.pdf_url, a.pdf_size_bytes,
+  a.first_page, a.last_page, a.published_at, a.jel_codes, a.license,
+  i.volume, i.number, i.year,
+  l.locale as requested_locale,
+  ft.title,                          ft.locale as title_locale,
+  fa.abstract,                       fa.locale as abstract_locale,
+  coalesce(fk.keywords, '{}'::text[]) as keywords,
+                                     fk.locale as keywords_locale,
+  (req.article_id is null)           as translation_missing
+from articles a
+cross join unnest(enum_range(null::locale_code)) as l(locale)
+left join issues i on i.id = a.issue_id
+left join article_translations req
+  on req.article_id = a.id and req.locale = l.locale
+left join lateral (
+  select t.title, t.locale
+  from article_translations t
+  where t.article_id = a.id and t.title is not null
+  order by locale_rank(t.locale, l.locale, a.primary_language)
+  limit 1
+) ft on true
+left join lateral (
+  select t.abstract, t.locale
+  from article_translations t
+  where t.article_id = a.id and t.abstract is not null
+  order by locale_rank(t.locale, l.locale, a.primary_language)
+  limit 1
+) fa on true
+left join lateral (
+  -- cardinality, not `is not null`: keywords is `not null default '{}'`, so an
+  -- empty array is a present value and would end the fallback chain early.
+  select t.keywords, t.locale
+  from article_translations t
+  where t.article_id = a.id and cardinality(t.keywords) > 0
+  order by locale_rank(t.locale, l.locale, a.primary_language)
+  limit 1
+) fk on true
+where a.state = 'published';
+
+grant select on published_articles_localised to anon, authenticated;
+```
+
+> The `'{}'::text[]` cast is load-bearing. An untyped `'{}'` in that position
+> resolves the column to `text` rather than `text[]`, the view builds without
+> complaint, and the generated TypeScript then types `keywords` as `string`.
+
+> Three correlated laterals per row is the readable formulation, not the fastest
+> one. At journal scale — hundreds to a few thousand articles — it is
+> irrelevant, and article pages filter to a single slug. If the sitemap or an
+> OAI-PMH full harvest ever gets slow, that is the place to measure.
+
+`translation_missing` still answers "was there a row for the locale the reader
+asked for?", which is what drives the inline notice in `SPEC.md` §4.3. The
+`*_locale` columns say which language each field actually came from — the notice
+should name that language, and the `lang` attributes in the markup should match
+it.
+
+---
+
+## Triggers
+
+```sql
+create or replace function touch_updated_at() returns trigger
+language plpgsql as $$
+begin new.updated_at = now(); return new; end $$;
+
+create trigger articles_touch before update on articles
+  for each row execute function touch_updated_at();
+-- repeat for issues, proposals
+
+-- Slugs, DOIs, and PDF paths are permanent once published (SPEC.md §5.7).
+-- `withdrawn` is included in the guard: without it, publish -> withdraw would
+-- unlock the identifiers on the next update.
+create or replace function guard_permanent_identifiers() returns trigger
+language plpgsql as $$
+begin
+  if old.state in ('published', 'withdrawn') then
+    if new.slug is distinct from old.slug then
+      raise exception 'slug is immutable for published articles';
+    end if;
+    if old.doi is not null and new.doi is distinct from old.doi then
+      raise exception 'doi is immutable once assigned';
+    end if;
+    if old.pdf_url is not null and new.pdf_url is distinct from old.pdf_url then
+      raise exception 'pdf_url is immutable for published articles';
+    end if;
+  end if;
+  return new;
+end $$;
+
+create trigger articles_guard_permanent before update on articles
+  for each row execute function guard_permanent_identifiers();
+
+-- A published article must have a title in its primary_language, or
+-- citation_title is emitted empty. This cannot be a check constraint: the title
+-- lives in another table. A *constraint* trigger deferred to commit lets the
+-- admin form insert the article and its translations in one transaction, in
+-- either order.
+create or replace function require_primary_translation() returns trigger
+language plpgsql as $$
+begin
+  if new.state = 'published' and not exists (
+    select 1 from article_translations t
+    where t.article_id = new.id
+      and t.locale = new.primary_language
+      and coalesce(t.title, '') <> ''
+  ) then
+    raise exception 'published article % has no % title',
+      new.id, new.primary_language;
+  end if;
+  return null;
+end $$;
+
+create constraint trigger articles_require_primary_translation
+  after insert or update on articles
+  deferrable initially deferred
+  for each row execute function require_primary_translation();
+
+-- Staff accounts are invite-only: an invite from the Supabase dashboard creates
+-- the auth.users row and this mirrors it into profiles as an editor. There is
+-- no public signup anywhere in this project.
+create or replace function handle_new_user() returns trigger
+language plpgsql security definer
+set search_path = public, pg_temp as $$
+begin
+  insert into profiles (id, full_name)
+  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', new.email))
+  on conflict (id) do nothing;
+  return new;
+end $$;
+
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function handle_new_user();
+```
+
+**Consequence: publishing cannot be a sequence of `supabase.insert()` calls.**
+The guard is deferred to commit, which means the article row and its
+primary-language translation must land in the *same transaction*. Every
+PostgREST request is its own transaction, so supabase-js cannot span the two —
+inserting the article alone raises `published article … has no … title` at the
+end of that request. Publish through a `security definer` Postgres function
+(`publish_article(…)`) called as an RPC, which gets one transaction for the
+article, its translations, and its author links. Verified: the two-statement
+sequence fails outside a transaction and succeeds inside one.
+
+> The primary-translation guard covers the article side. Deleting the last
+> primary-language translation row out from under a published article is the
+> mirror-image hole; the admin UI is the practical place to prevent it, but add
+> the matching trigger on `article_translations` if you want it airtight.
+
+---
+
+## Seed data
+
+Seed before building any UI:
+
+- 1 published issue (vol 1, no 1) and 1 draft issue
+- 3 published articles: one `primary_language = 'en'` with all three
+  translations, one `'ru'` with `ru` + `en` only, one `'uz'` with `uz` only
+  (this last one exercises the fallback path — do not skip it)
+- 1 draft article, to verify RLS hides it from the anon key — query the
+  **view** with the anon key too, not only the tables
+- 1 published article with `issue_id = null`: online first, therefore no volume,
+  number, or year. It is the seed that catches every query joining through
+  `issues` with an inner join, and every filter that reads `issues.year`
+- 1 article with a deliberately half-filled translation (say a `ru` title with
+  no `ru` abstract) to exercise **field-level** fallback in the view
+- 5 authors, at least two shared across articles, with `en`/`ru`/`uz` display
+  names including Cyrillic forms in `ru`
+- 2 proposals in different states
+
+The single-locale Uzbek article, the draft article, and the online-first article
+are the seeds that catch the bugs that matter. Seeding is not done until an
+anon-key query for the draft returns zero rows from both the table and the
+view.
