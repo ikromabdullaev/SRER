@@ -102,5 +102,31 @@
     "title": "Search",
     "weeklyNote": "Weekly posts are searched separately from articles.",
     "weeklyTitle": "Search Weekly"
+  },
+  "submit": {
+    "abstract": "Abstract",
+    "affiliation": "Affiliation",
+    "coauthors": "Co-authors",
+    "email": "Email",
+    "errorEmail": "That email address does not look right.",
+    "errorFileSize": "That file is larger than 20 MB.",
+    "errorFileType": "Please attach a PDF or a Word document.",
+    "errorRate": "Several proposals have already been sent from this connection. Please try again later, or email the editors directly.",
+    "errorRequired": "Please fill in your name, email, title and abstract.",
+    "errorServer": "Something went wrong at our end. Please try again, or email the editors directly.",
+    "file": "Draft or outline",
+    "fileHint": "PDF or Word document, up to 20 MB.",
+    "language": "Language you intend to publish in",
+    "lede": "We accept proposals year-round. Send a title and an abstract; an editor will read it and be in touch.",
+    "name": "Your name",
+    "noFees": "There are no submission or publication fees, and every article is free to read.",
+    "optional": "(optional)",
+    "proposedTitle": "Proposed title",
+    "submit": "Send proposal",
+    "submitting": "Sending…",
+    "successBody": "Thank you. An editor will read your proposal and contact you directly. You do not need to do anything else.",
+    "successHeading": "Proposal received",
+    "title": "Propose an article",
+    "uploading": "Uploading…"
   }
 }

@@ -19,7 +19,11 @@ pointing at the right thing.
 
 *Resolved:* **D1** (DOI pattern) and **D4** (is a DOI mandatory to publish) both
 fell away when DOIs left the current scope — see §2. Neither needs an answer
-until the journal actually registers a prefix.
+until the journal actually registers a prefix. **D7** (rate-limit store) is
+resolved too: the limit counts against `proposals` itself, since `source_ip`
+and `created_at` are already there and server-owned, so a second table would be
+another thing to keep correct for no extra signal. **D6** (author page URLs)
+is resolved: `authors.slug` exists and `/authors/karimov-aziz` is live.
 
 **D2 — The public origin.** *Blocks step 3.*
 Written as `https://.../` throughout. It is baked into every canonical URL,
@@ -46,16 +50,6 @@ but that is nowhere stated.
 the official JEL tree into the repo as JSON, or accept free entry with an
 autocomplete over values already in use — but a filter over uncontrolled text
 will not hold up.
-
-**D6 — Author page URLs.** *Blocks step 4.*
-§4.4 uses `/authors/{uuid}`. Indexed URLs are permanent in practice, so an
-author slug is much cheaper to adopt now than after Scholar has crawled them.
-*Recommended:* add `authors.slug` and keep the UUID out of the URL.
-
-**D7 — Rate-limit store for the proposal form.** *Blocks step 7.*
-§8 requires a per-IP limit; Vercel functions are stateless. *Recommended:* a
-`proposal_rate_limit` table written by the same server-side handler that owns
-`source_ip` — Supabase is already a dependency and the volume is trivial.
 
 **D8 — `unaccent`.** *Blocks step 5.*
 The extension is installed in `SCHEMA.md` and wired into nothing. Either fold it
@@ -482,9 +476,25 @@ Two constraints force this shape:
 Validate size and MIME type when minting the URL, and again after upload from
 the stored object — the client controls what it actually sends.
 
-Spam protection: honeypot field plus a simple rate limit by IP (store per **D7**).
-No CAPTCHA — it degrades the experience for the exact people you want
-submitting.
+Spam protection: honeypot field plus a rate limit of 5 submissions per IP per
+hour, counted against `proposals` itself. No CAPTCHA — it degrades the
+experience for the exact people you want submitting.
+
+**Email is notification, never the record.** A proposal that reached the
+database has been received. If Resend then fails, the submitter still sees the
+success state and the editors still see it in the inbox, because losing a
+researcher's submission to a mail hiccup is the worst outcome this form can
+produce.
+
+**Sending requires a verified domain**, and this is a hard external constraint
+rather than a configuration detail. Confirmed against the live API:
+`gmail.com` cannot be a sending domain (Resend will not verify a domain you do
+not own, and Gmail's DMARC would reject the mail anyway), and
+`onboarding@resend.dev` delivers only to the Resend account owner. Until a
+domain is verified and `RESEND_FROM` is set, outbound mail is switched off and
+the proposals inbox says so on screen. The editorial address can still
+*receive* at any provider; it is the *sender* that needs the domain. This is
+**D2** wearing a different hat.
 
 ---
 

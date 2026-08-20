@@ -27,6 +27,7 @@
     "next-intl": "^4.13.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "resend": "^6.21.0",
     "sanitize-html": "^2.17.7"
   },
   "devDependencies": {

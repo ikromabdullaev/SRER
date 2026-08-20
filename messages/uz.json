@@ -102,5 +102,31 @@
     "title": "Qidiruv",
     "weeklyNote": "Haftalik nashrlar maqolalardan alohida qidiriladi.",
     "weeklyTitle": "Haftalik bo'yicha qidiruv"
+  },
+  "submit": {
+    "abstract": "Annotatsiya",
+    "affiliation": "Ish joyi",
+    "coauthors": "Hammualliflar",
+    "email": "Elektron pochta",
+    "errorEmail": "Elektron pochta manzili notogri korinadi.",
+    "errorFileSize": "Fayl 20 MB dan katta.",
+    "errorFileType": "PDF yoki Word hujjatini biriktiring.",
+    "errorRate": "Bu ulanishdan allaqachon bir nechta taklif yuborilgan. Keyinroq urinib koring yoki tahririyatga toppa-togri yozing.",
+    "errorRequired": "Ism, pochta, sarlavha va annotatsiyani toldiring.",
+    "errorServer": "Bizning tomonimizda xatolik yuz berdi. Qayta urinib koring yoki tahririyatga yozing.",
+    "file": "Qoralama yoki reja",
+    "fileHint": "PDF yoki Word hujjati, 20 MB gacha.",
+    "language": "Nashr tili",
+    "lede": "Takliflar yil davomida qabul qilinadi. Sarlavha va annotatsiya yuboring — muharrir oqib chiqadi va siz bilan boglanadi.",
+    "name": "Ismingiz",
+    "noFees": "Taqdim etish va nashr uchun tolov olinmaydi, barcha maqolalar ochiq kirishda.",
+    "optional": "(ixtiyoriy)",
+    "proposedTitle": "Taklif etilayotgan sarlavha",
+    "submit": "Taklifni yuborish",
+    "submitting": "Yuborilmoqda…",
+    "successBody": "Rahmat. Muharrir taklifingizni oqib chiqadi va siz bilan boglanadi. Boshqa hech narsa qilish shart emas.",
+    "successHeading": "Taklif qabul qilindi",
+    "title": "Maqola taklif qilish",
+    "uploading": "Yuklanmoqda…"
   }
 }

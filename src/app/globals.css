@@ -555,3 +555,67 @@ section {
   padding: 1rem;
   margin: 0.75rem 0;
 }
+
+/* Proposal form and inbox ------------------------------------------------ */
+
+.proposal-form {
+  max-width: 40rem;
+}
+
+.optional {
+  color: var(--ink-muted);
+  font-weight: normal;
+}
+
+/* Hidden from people and from assistive technology; bots fill it in. */
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.admin-filters {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.proposal-list {
+  list-style: none;
+  padding: 0;
+}
+
+.proposal {
+  border-bottom: 1px solid var(--rule);
+}
+
+.proposal__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.proposal__title {
+  font-weight: 600;
+}
+
+.proposal__detail {
+  padding: 0 0 1rem;
+}
+
+.proposal__abstract {
+  white-space: pre-wrap;
+}
+
+.badge--new { background: #eef4ff; border-color: #b9cdf5; }
+.badge--spam { background: #f6eaea; border-color: #ddb4b4; }
