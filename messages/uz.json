@@ -1,0 +1,44 @@
+{
+  "locale": {
+    "en": "ingliz",
+    "uz": "o'zbek",
+    "ru": "rus"
+  },
+  "nav": {
+    "home": "Bosh sahifa",
+    "issues": "Sonlar",
+    "onlineFirst": "Onlayn nashr",
+    "search": "Qidiruv",
+    "about": "Jurnal haqida",
+    "forAuthors": "Mualliflar uchun",
+    "submit": "Taklif yuborish",
+    "skipToContent": "Asosiy qismga o'tish",
+    "languageSwitcher": "Til"
+  },
+  "home": {
+    "title": "Bosh sahifa",
+    "latestIssue": "So'nggi son",
+    "onlineFirstHeading": "Onlayn nashr etilgan",
+    "noArticles": "Hozircha maqolalar chop etilmagan."
+  },
+  "article": {
+    "abstract": "Annotatsiya",
+    "keywords": "Kalit so'zlar",
+    "authors": "Mualliflar",
+    "downloadPdf": "PDF yuklab olish",
+    "pages": "{first}–{last}-betlar",
+    "published": "Nashr sanasi: {date}",
+    "received": "Qabul qilindi: {date}",
+    "accepted": "Tasdiqlandi: {date}",
+    "licence": "Litsenziya",
+    "onlineFirstNotice": "Ushbu maqola onlayn nashr etilgan va hali biror songa kiritilmagan.",
+    "translationMissing": "Ushbu annotatsiya hozircha {language} tilida mavjud emas. U {shown} tilida ko'rsatilmoqda.",
+    "titleFallbackNotice": "Ushbu maqolaning {language} tilidagi tarjimasi mavjud emas. U {shown} tilida ko'rsatilmoqda.",
+    "correspondingAuthor": "Mas'ul muallif",
+    "issueLine": "{volume}-jild, {number}-son ({year})",
+    "notFound": "Maqola topilmadi"
+  },
+  "common": {
+    "readMore": "Batafsil"
+  }
+}

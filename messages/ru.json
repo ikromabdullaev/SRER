@@ -1,0 +1,44 @@
+{
+  "locale": {
+    "en": "английском",
+    "uz": "узбекском",
+    "ru": "русском"
+  },
+  "nav": {
+    "home": "Главная",
+    "issues": "Выпуски",
+    "onlineFirst": "Онлайн-первые",
+    "search": "Поиск",
+    "about": "О журнале",
+    "forAuthors": "Авторам",
+    "submit": "Подать заявку",
+    "skipToContent": "Перейти к содержанию",
+    "languageSwitcher": "Язык"
+  },
+  "home": {
+    "title": "Главная",
+    "latestIssue": "Последний выпуск",
+    "onlineFirstHeading": "Опубликовано онлайн",
+    "noArticles": "Статьи ещё не опубликованы."
+  },
+  "article": {
+    "abstract": "Аннотация",
+    "keywords": "Ключевые слова",
+    "authors": "Авторы",
+    "downloadPdf": "Скачать PDF",
+    "pages": "С. {first}–{last}",
+    "published": "Опубликовано {date}",
+    "received": "Поступила {date}",
+    "accepted": "Принята {date}",
+    "licence": "Лицензия",
+    "onlineFirstNotice": "Статья опубликована онлайн и ещё не включена в выпуск.",
+    "translationMissing": "Аннотация пока недоступна на {language} языке. Она показана на {shown} языке.",
+    "titleFallbackNotice": "Статья недоступна на {language} языке. Она показана на {shown} языке.",
+    "correspondingAuthor": "Автор для переписки",
+    "issueLine": "Том {volume}, № {number} ({year})",
+    "notFound": "Статья не найдена"
+  },
+  "common": {
+    "readMore": "Подробнее"
+  }
+}

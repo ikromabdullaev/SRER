@@ -1,49 +1,154 @@
+/*
+ * Deliberately minimal. SPEC.md §10 puts the design pass at step 9, after the
+ * metadata, archive, search, admin and OAI-PMH work is done and verified.
+ * What is here covers legibility and accessibility only.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --measure: 68ch;
+  --ink: #16181d;
+  --ink-muted: #5a6070;
+  --rule: #d8dbe2;
+  --surface: #ffffff;
+  --notice: #f4f1e8;
+  --notice-rule: #cbbf9a;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
+}
+
+body {
   margin: 0;
+  padding: 0 1.25rem 4rem;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.6;
+}
+
+main {
+  max-width: var(--measure);
+  margin: 0 auto;
 }
 
 a {
   color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+/* Header ------------------------------------------------------------- */
+
+.site-header {
+  max-width: var(--measure);
+  margin: 0 auto;
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-header__bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 0 0.5rem;
+}
+
+.site-header__title {
+  font-size: 1.25rem;
+  font-weight: 600;
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 1rem;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip-link:focus {
+  position: static;
+  display: inline-block;
+  padding: 0.5rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Article ------------------------------------------------------------ */
+
+.article__meta {
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.article__authors {
+  list-style: none;
+  margin: 0.5rem 0 1.5rem;
+  padding: 0;
+}
+
+.article__authors li {
+  margin-bottom: 0.35rem;
+}
+
+.article__affiliation {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+/*
+ * The fallback notice. SPEC.md §4.3 requires this to be visible and explicit
+ * rather than a silent substitution: a reader is entitled to know they are
+ * looking at a different language than the one they asked for.
+ */
+.notice {
+  background: var(--notice);
+  border-left: 3px solid var(--notice-rule);
+  padding: 0.75rem 1rem;
+  margin: 1.5rem 0;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.keywords {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.article-list {
+  list-style: none;
+  padding: 0;
+}
+
+.article-list li {
+  border-bottom: 1px solid var(--rule);
+  padding: 1rem 0;
 }

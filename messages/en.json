@@ -1,0 +1,44 @@
+{
+  "locale": {
+    "en": "English",
+    "uz": "Uzbek",
+    "ru": "Russian"
+  },
+  "nav": {
+    "home": "Home",
+    "issues": "Issues",
+    "onlineFirst": "Online first",
+    "search": "Search",
+    "about": "About",
+    "forAuthors": "For authors",
+    "submit": "Submit a proposal",
+    "skipToContent": "Skip to content",
+    "languageSwitcher": "Language"
+  },
+  "home": {
+    "title": "Home",
+    "latestIssue": "Latest issue",
+    "onlineFirstHeading": "Published online first",
+    "noArticles": "No articles have been published yet."
+  },
+  "article": {
+    "abstract": "Abstract",
+    "keywords": "Keywords",
+    "authors": "Authors",
+    "downloadPdf": "Download PDF",
+    "pages": "Pages {first}–{last}",
+    "published": "Published {date}",
+    "received": "Received {date}",
+    "accepted": "Accepted {date}",
+    "licence": "Licence",
+    "onlineFirstNotice": "This article was published online first and has not yet been assigned to an issue.",
+    "translationMissing": "This abstract is not yet available in {language}. It is shown in {shown} instead.",
+    "titleFallbackNotice": "This article has no {language} translation. It is shown in {shown}.",
+    "correspondingAuthor": "Corresponding author",
+    "issueLine": "Volume {volume}, Issue {number} ({year})",
+    "notFound": "Article not found"
+  },
+  "common": {
+    "readMore": "Read more"
+  }
+}
