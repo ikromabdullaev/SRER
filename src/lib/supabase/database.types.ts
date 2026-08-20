@@ -386,22 +386,101 @@ export type Database = {
         }
         Relationships: []
       }
+      post_translations: {
+        Row: {
+          body: string
+          excerpt: string | null
+          locale: Database["public"]["Enums"]["locale_code"]
+          post_id: string
+          search_vector: unknown
+          title: string
+        }
+        Insert: {
+          body: string
+          excerpt?: string | null
+          locale: Database["public"]["Enums"]["locale_code"]
+          post_id: string
+          search_vector?: unknown
+          title: string
+        }
+        Update: {
+          body?: string
+          excerpt?: string | null
+          locale?: Database["public"]["Enums"]["locale_code"]
+          post_id?: string
+          search_vector?: unknown
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_translations_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: string
+          published_at: string | null
+          slug: string
+          state: Database["public"]["Enums"]["publish_state"]
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          slug: string
+          state?: Database["public"]["Enums"]["publish_state"]
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          slug?: string
+          state?: Database["public"]["Enums"]["publish_state"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          bio: string | null
           created_at: string
           full_name: string
+          handle: string | null
           id: string
           role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
+          bio?: string | null
           created_at?: string
           full_name: string
+          handle?: string | null
           id: string
           role?: Database["public"]["Enums"]["user_role"]
         }
         Update: {
+          bio?: string | null
           created_at?: string
           full_name?: string
+          handle?: string | null
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
         }

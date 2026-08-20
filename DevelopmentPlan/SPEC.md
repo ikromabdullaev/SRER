@@ -98,7 +98,9 @@ Explicitly out of scope. Do not build these, do not stub UI for them.
 - In-app peer review, reviewer accounts, or decision letters
 - Author self-service accounts or manuscript tracking
 - ORCID OAuth login (the ORCID *field* is stored; login is not built)
-- HTML full-text rendering of articles (PDF is the article of record)
+- HTML full-text rendering of **articles** (the PDF is the article of record).
+  This does not apply to Weekly posts, a separate content type where the text
+  *is* the record — see **Weekly**.
 - Article-level analytics dashboards
 - Comments, altmetrics, social features
 - Payment of any kind
@@ -159,6 +161,9 @@ chain in TypeScript. Name the actual source language in the notice, and set
 /[locale]/issues                    all issues, newest first
 /[locale]/issues/[volume]/[number]  single issue, table of contents
 /[locale]/online-first              published, not yet assigned to an issue
+/[locale]/weekly                    all Weekly posts, newest first
+/[locale]/weekly/[handle]           one editor's Weekly series
+/[locale]/weekly/[handle]/[slug]    a single Weekly post
 /[locale]/articles/[slug]           single article
 /[locale]/authors/[id]              author page, all their articles
 /[locale]/search                    search results
@@ -502,6 +507,83 @@ expensive, and discovering it in CI is free.
 
 ---
 
+## Weekly — the editorial series
+
+A second content type, separate from the scholarly record in the database, in
+the UI, and in what search engines are told about it.
+
+Editors write or paste pieces directly into the site — a recurring commentary
+series, one per editor. There is no PDF, no peer review, no DOI, and no issue.
+The text is the record.
+
+### Why it is not an `article_type`
+
+Three reasons, and the first two are the ones that matter:
+
+1. **`published_needs_pdf`.** Every published article is constrained to have a
+   PDF. Relaxing that constraint to accommodate Weekly posts would weaken a
+   real guarantee protecting the scholarly record, for the benefit of content
+   that is not part of it.
+2. **Emitting `citation_*` for a Weekly post would harm the journal.** It tells
+   Google Scholar that an editorial column is a peer-reviewed journal article,
+   which dilutes the journal's record, and DOAJ assesses what a journal claims
+   as content. Posts carry ordinary `Article` JSON-LD, appear in the sitemap,
+   and are **excluded from OAI-PMH**, which stays the peer-reviewed record.
+3. It is the same reasoning `SCHEMA.md` already applies to `proposals` versus
+   `articles`: separate things stay separate, so every public query is safe by
+   construction.
+
+### Authorship
+
+A post belongs to the editor who wrote it — a `profiles` row, not an `authors`
+entity. `authors` are researchers in the scholarly record; editors are staff.
+The URL carries the editor's handle, so `profiles` gains a public, URL-safe
+`handle` and only the columns needed for a byline are readable publicly. The
+`role` column stays private: who is an admin is not public information.
+
+### Languages — different from articles, deliberately
+
+Articles never hide. A missing translation degrades to `primary_language` with
+a notice, because the scholarly record must stay reachable (§4.3).
+
+Posts behave differently: a post exists **only in the languages it was written
+in**. An editor may write one language or all three.
+
+- The Weekly listing shows every published post regardless of language, each
+  marked with the languages it is available in.
+- When the reader filters by language, posts without that language **are
+  removed from the list**. No fallback, no notice.
+- Requesting a post in a locale it does not exist in **redirects (308) to an
+  available locale** — preferring the reader's locale, then the post's original
+  language. It does not 404 and it does not render a fallback page: a shared
+  link must keep working, but there is no reason to publish an English post at
+  a Russian URL.
+- `hreflang` therefore lists **only the locales a post actually exists in**,
+  which is what those URLs are for.
+
+### Editing
+
+The admin editor (build step 6) supports headings, bold, italic, lists, links,
+block quotes, tables, footnotes, and images. **No mathematical notation** —
+LaTeX is explicitly out of scope.
+
+Pasted content is **sanitised on save against a strict allowlist**. Pasting from
+Word or Google Docs carries a large amount of junk markup, and some paste
+formatting will be dropped on purpose. Store the sanitised HTML; sanitise
+server-side, never trusting the client to have done it.
+
+Images are uploaded to a public `post-images` bucket. `<img>` is allowed only
+with a `src` inside that bucket, so a sanitised post cannot hotlink or beacon.
+
+### Search
+
+Posts and articles are **separate categories and are never mixed in one result
+list** (§6 governs article search only). Posts have their own search over their
+own tsvectors, scoped to the Weekly section, with the same per-locale
+configuration and the same Uzbek trigram compensation.
+
+---
+
 ## 10. Build order
 
 Follow this sequence. Each step is verifiable before the next begins.
@@ -526,9 +608,12 @@ Follow this sequence. Each step is verifiable before the next begins.
    Establish the cache-tag scheme now (see §11); retrofitting invalidation at
    step 6 means revisiting every page built between here and there. This is the
    highest-value page.
-4. **Issue archive and homepage.**
+4. **Issue archive and homepage.** Plus the public Weekly pages: the listing,
+   an editor's series, and a single post. Reading comes before writing — the
+   editor UI is step 6.
 5. **Search.** Per-locale tsvector, trigram fallback for `uz`, filters.
-6. **Supabase auth + admin publishing form.**
+6. **Supabase auth + admin publishing form**, and the Weekly editor: rich text,
+   sanitising paste, image upload.
 7. **Proposal form → DB → Resend.**
 8. **OAI-PMH endpoint + sitemap.** The Crossref generator is deferred with §5.5.
 9. **Design pass.** Not before this point.

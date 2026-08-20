@@ -36,8 +36,13 @@ create type review_recommendation as enum (
 create table profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
   full_name   text not null,
+  handle      text unique,           -- URL-safe; used by /weekly/{handle}
+  bio         text,
   role        user_role not null default 'editor',
-  created_at  timestamptz not null default now()
+  created_at  timestamptz not null default now(),
+
+  constraint handle_format
+    check (handle is null or handle ~ '^[a-z0-9]+(-[a-z0-9]+)*$')
 );
 
 -- ===== block 6 : `issues` =====
@@ -186,7 +191,70 @@ create table proposals (
   updated_at    timestamptz not null default now()
 );
 
--- ===== block 11 : Defined but unused in v1 =====
+-- ===== block 11 : `posts` =====
+create table posts (
+  id            uuid primary key default uuid_generate_v4(),
+  author_id     uuid not null references profiles(id) on delete restrict,
+  slug          text not null,
+  state         publish_state not null default 'draft',
+  published_at  timestamptz,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+
+  -- The URL is /weekly/{handle}/{slug}, so slugs need only be unique per
+  -- editor. Two editors may each write a "market-review-2026".
+  unique (author_id, slug),
+
+  constraint published_needs_date
+    check (state <> 'published' or published_at is not null)
+);
+
+-- ===== block 12 : `post_translations` =====
+create table post_translations (
+  post_id       uuid not null references posts(id) on delete cascade,
+  locale        locale_code not null,
+  title         text not null,
+  excerpt       text,
+  -- Sanitised HTML, produced by the admin editor and cleaned server-side
+  -- against a strict allowlist. Never render un-sanitised input here.
+  body          text not null,
+
+  search_vector tsvector generated always as (
+    setweight(
+      to_tsvector(
+        case locale
+          when 'en' then 'english'::regconfig
+          when 'ru' then 'russian'::regconfig
+          else 'simple'::regconfig
+        end,
+        coalesce(title, '')
+      ), 'A')
+    ||
+    setweight(
+      to_tsvector(
+        case locale
+          when 'en' then 'english'::regconfig
+          when 'ru' then 'russian'::regconfig
+          else 'simple'::regconfig
+        end,
+        coalesce(excerpt, '')
+      ), 'B')
+    ||
+    setweight(
+      to_tsvector(
+        case locale
+          when 'en' then 'english'::regconfig
+          when 'ru' then 'russian'::regconfig
+          else 'simple'::regconfig
+        end,
+        coalesce(body, '')
+      ), 'C')
+  ) stored,
+
+  primary key (post_id, locale)
+);
+
+-- ===== block 13 : Defined but unused in v1 =====
 create table reviews (
   id              uuid primary key default uuid_generate_v4(),
   article_id      uuid not null references articles(id) on delete cascade,
@@ -210,7 +278,7 @@ create table editorial_decisions (
   decided_at    timestamptz not null default now()
 );
 
--- ===== block 12 : Indexes =====
+-- ===== block 14 : Indexes =====
 -- Full-text, per locale
 create index article_translations_fts_idx
   on article_translations using gin (search_vector);
@@ -241,7 +309,18 @@ create index proposals_state_idx on proposals (state, created_at desc);
 create index article_translations_locale_idx
   on article_translations (locale);
 
--- ===== block 13 : Row Level Security =====
+-- Weekly
+create index posts_published_idx
+  on posts (published_at desc) where state = 'published';
+create index posts_author_idx on posts (author_id, published_at desc);
+create index post_translations_fts_idx
+  on post_translations using gin (search_vector);
+create index post_translations_title_trgm_idx
+  on post_translations using gin (title gin_trgm_ops);
+create index post_translations_locale_idx
+  on post_translations (locale);
+
+-- ===== block 15 : Row Level Security =====
 alter table articles              enable row level security;
 alter table article_translations  enable row level security;
 alter table issues                enable row level security;
@@ -253,6 +332,8 @@ alter table proposals             enable row level security;
 alter table profiles              enable row level security;
 alter table reviews               enable row level security;
 alter table editorial_decisions   enable row level security;
+alter table posts                 enable row level security;
+alter table post_translations     enable row level security;
 
 -- Helpers. A `security definer` function must pin its search_path, or a caller
 -- can shadow `profiles` with a temp table and promote themselves to staff.
@@ -317,10 +398,49 @@ create policy "staff manage articles" on articles
 -- row; the trigger below mirrors it into `profiles` as an `editor`. Role
 -- changes are user management, which SPEC.md §7.4 reserves to `admin` — the
 -- only place that distinction is enforceable is here, not in the UI.
+-- A profile becomes publicly visible by being given a handle: that is what
+-- opting into a public Weekly series means. Only the byline columns are
+-- readable (see Grants) -- the grant limits WHICH COLUMNS, this policy limits
+-- WHICH ROWS, and both are required. With the grant alone, anon reads zero
+-- rows; with the policy alone, anon cannot reach the table at all.
+create policy "public reads editor bylines" on profiles
+  for select using (handle is not null);
+
 create policy "staff read profiles" on profiles
   for select using (is_staff());
 create policy "admins manage profiles" on profiles
   for all using (is_admin()) with check (is_admin());
+
+-- Weekly posts: public reads published ones, same shape as articles.
+create policy "public reads published posts"
+  on posts for select
+  using (state = 'published');
+
+create policy "public reads translations of published posts"
+  on post_translations for select
+  using (exists (
+    select 1 from posts p
+    where p.id = post_id and p.state = 'published'
+  ));
+
+-- An editor manages their own posts; an admin manages anyone's.
+create policy "editors manage their own posts"
+  on posts for all
+  using (is_staff() and (author_id = auth.uid() or is_admin()))
+  with check (is_staff() and (author_id = auth.uid() or is_admin()));
+
+create policy "editors manage their own post translations"
+  on post_translations for all
+  using (exists (
+    select 1 from posts p
+    where p.id = post_id and is_staff()
+      and (p.author_id = auth.uid() or is_admin())
+  ))
+  with check (exists (
+    select 1 from posts p
+    where p.id = post_id and is_staff()
+      and (p.author_id = auth.uid() or is_admin())
+  ));
 
 -- Proposals: written server-side only, staff read.
 --
@@ -335,7 +455,7 @@ create policy "staff read proposals"
 create policy "staff update proposals"
   on proposals for update using (is_staff());
 
--- ===== block 14 : Grants =====
+-- ===== block 16 : Grants =====
 -- Public read. Row visibility is still decided by the policies above: these
 -- tables are readable, not their draft rows.
 grant select on articles             to anon, authenticated;
@@ -345,11 +465,18 @@ grant select on issue_translations   to anon, authenticated;
 grant select on article_authors      to anon, authenticated;
 grant select on author_translations  to anon, authenticated;
 
+grant select on posts             to anon, authenticated;
+grant select on post_translations to anon, authenticated;
+
 -- authors is column-restricted: everything except `email`.
 grant select (id, family_name, given_name, orcid, website_url, created_at)
   on authors to anon, authenticated;
 
--- ===== block 15 : Views =====
+-- profiles is column-restricted for the Weekly byline. `role` is withheld:
+-- which accounts are admins is not public information.
+grant select (id, handle, full_name, bio) on profiles to anon, authenticated;
+
+-- ===== block 17 : Views =====
 -- Fallback priority for one candidate locale. Immutable so it can be used in
 -- an ORDER BY without blocking inlining.
 create or replace function locale_rank(
@@ -415,7 +542,7 @@ where a.state = 'published';
 
 grant select on published_articles_localised to anon, authenticated;
 
--- ===== block 16 : Triggers =====
+-- ===== block 18 : Triggers =====
 create or replace function touch_updated_at() returns trigger
 language plpgsql as $$
 begin new.updated_at = now(); return new; end $$;
@@ -471,6 +598,41 @@ create constraint trigger articles_require_primary_translation
   after insert or update on articles
   deferrable initially deferred
   for each row execute function require_primary_translation();
+
+-- Weekly post slugs are permanent once published, for the same reason article
+-- slugs are: a published URL that moves is a broken link.
+create or replace function guard_post_slug() returns trigger
+language plpgsql as $$
+begin
+  if old.state = 'published' and new.slug is distinct from old.slug then
+    raise exception 'slug is immutable for published posts';
+  end if;
+  return new;
+end $$;
+
+create trigger posts_guard_slug before update on posts
+  for each row execute function guard_post_slug();
+
+create trigger posts_touch before update on posts
+  for each row execute function touch_updated_at();
+
+-- A published post must exist in at least one language.
+create or replace function require_post_translation() returns trigger
+language plpgsql as $$
+begin
+  if new.state = 'published' and not exists (
+    select 1 from post_translations t
+    where t.post_id = new.id and coalesce(t.title, '') <> ''
+  ) then
+    raise exception 'published post % has no translations', new.id;
+  end if;
+  return null;
+end $$;
+
+create constraint trigger posts_require_translation
+  after insert or update on posts
+  deferrable initially deferred
+  for each row execute function require_post_translation();
 
 -- Staff accounts are invite-only: an invite from the Supabase dashboard creates
 -- the auth.users row and this mirrors it into profiles as an editor. There is

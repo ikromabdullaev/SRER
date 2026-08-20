@@ -104,10 +104,24 @@ Admin and editor accounts. Keyed to Supabase `auth.users`.
 create table profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
   full_name   text not null,
+  handle      text unique,           -- URL-safe; used by /weekly/{handle}
+  bio         text,
   role        user_role not null default 'editor',
-  created_at  timestamptz not null default now()
+  created_at  timestamptz not null default now(),
+
+  constraint handle_format
+    check (handle is null or handle ~ '^[a-z0-9]+(-[a-z0-9]+)*$')
 );
 ```
+
+`handle` is public and appears in Weekly URLs, so it is subject to the usual
+permanence pressure: changing it breaks every link to that editor's posts. It
+is nullable because only editors who publish a Weekly series need one.
+
+**`role` is not public.** Which accounts are admins is not information the
+site should hand out, so the public grant covers `id`, `handle`, `full_name`,
+and `bio` only — the same column-grant technique that withholds
+`authors.email`. See Grants.
 
 ### `issues`
 
@@ -307,6 +321,89 @@ create table proposals (
 );
 ```
 
+### `posts`
+
+The Weekly series (see `SPEC.md` → **Weekly**). A separate content type from
+`articles`: no PDF, no issue, no DOI, and never mixed into the scholarly record.
+
+```sql
+create table posts (
+  id            uuid primary key default uuid_generate_v4(),
+  author_id     uuid not null references profiles(id) on delete restrict,
+  slug          text not null,
+  state         publish_state not null default 'draft',
+  published_at  timestamptz,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+
+  -- The URL is /weekly/{handle}/{slug}, so slugs need only be unique per
+  -- editor. Two editors may each write a "market-review-2026".
+  unique (author_id, slug),
+
+  constraint published_needs_date
+    check (state <> 'published' or published_at is not null)
+);
+```
+
+Note what is **absent**: no `pdf_url`, no `issue_id`, no `doi`, no
+`primary_language`. A post has no single original language in the way an
+article's PDF does — it exists in whichever languages were written, and none of
+them is the record.
+
+### `post_translations`
+
+```sql
+create table post_translations (
+  post_id       uuid not null references posts(id) on delete cascade,
+  locale        locale_code not null,
+  title         text not null,
+  excerpt       text,
+  -- Sanitised HTML, produced by the admin editor and cleaned server-side
+  -- against a strict allowlist. Never render un-sanitised input here.
+  body          text not null,
+
+  search_vector tsvector generated always as (
+    setweight(
+      to_tsvector(
+        case locale
+          when 'en' then 'english'::regconfig
+          when 'ru' then 'russian'::regconfig
+          else 'simple'::regconfig
+        end,
+        coalesce(title, '')
+      ), 'A')
+    ||
+    setweight(
+      to_tsvector(
+        case locale
+          when 'en' then 'english'::regconfig
+          when 'ru' then 'russian'::regconfig
+          else 'simple'::regconfig
+        end,
+        coalesce(excerpt, '')
+      ), 'B')
+    ||
+    setweight(
+      to_tsvector(
+        case locale
+          when 'en' then 'english'::regconfig
+          when 'ru' then 'russian'::regconfig
+          else 'simple'::regconfig
+        end,
+        coalesce(body, '')
+      ), 'C')
+  ) stored,
+
+  primary key (post_id, locale)
+);
+```
+
+The existence of a row here is what makes a post available in that locale.
+There is **no fallback**: unlike `article_translations`, a missing row means the
+post does not exist in that language, which is exactly what `SPEC.md` →
+**Weekly** → *Languages* specifies. The body is indexed at weight `C` so a
+matching title still outranks a passing mention in a long piece.
+
 ---
 
 ## Defined but unused in v1
@@ -372,6 +469,17 @@ create index proposals_state_idx on proposals (state, created_at desc);
 -- primary key cannot serve a locale-first scan.
 create index article_translations_locale_idx
   on article_translations (locale);
+
+-- Weekly
+create index posts_published_idx
+  on posts (published_at desc) where state = 'published';
+create index posts_author_idx on posts (author_id, published_at desc);
+create index post_translations_fts_idx
+  on post_translations using gin (search_vector);
+create index post_translations_title_trgm_idx
+  on post_translations using gin (title gin_trgm_ops);
+create index post_translations_locale_idx
+  on post_translations (locale);
 ```
 
 ---
@@ -392,6 +500,8 @@ alter table proposals             enable row level security;
 alter table profiles              enable row level security;
 alter table reviews               enable row level security;
 alter table editorial_decisions   enable row level security;
+alter table posts                 enable row level security;
+alter table post_translations     enable row level security;
 
 -- Helpers. A `security definer` function must pin its search_path, or a caller
 -- can shadow `profiles` with a temp table and promote themselves to staff.
@@ -456,10 +566,49 @@ create policy "staff manage articles" on articles
 -- row; the trigger below mirrors it into `profiles` as an `editor`. Role
 -- changes are user management, which SPEC.md §7.4 reserves to `admin` — the
 -- only place that distinction is enforceable is here, not in the UI.
+-- A profile becomes publicly visible by being given a handle: that is what
+-- opting into a public Weekly series means. Only the byline columns are
+-- readable (see Grants) -- the grant limits WHICH COLUMNS, this policy limits
+-- WHICH ROWS, and both are required. With the grant alone, anon reads zero
+-- rows; with the policy alone, anon cannot reach the table at all.
+create policy "public reads editor bylines" on profiles
+  for select using (handle is not null);
+
 create policy "staff read profiles" on profiles
   for select using (is_staff());
 create policy "admins manage profiles" on profiles
   for all using (is_admin()) with check (is_admin());
+
+-- Weekly posts: public reads published ones, same shape as articles.
+create policy "public reads published posts"
+  on posts for select
+  using (state = 'published');
+
+create policy "public reads translations of published posts"
+  on post_translations for select
+  using (exists (
+    select 1 from posts p
+    where p.id = post_id and p.state = 'published'
+  ));
+
+-- An editor manages their own posts; an admin manages anyone's.
+create policy "editors manage their own posts"
+  on posts for all
+  using (is_staff() and (author_id = auth.uid() or is_admin()))
+  with check (is_staff() and (author_id = auth.uid() or is_admin()));
+
+create policy "editors manage their own post translations"
+  on post_translations for all
+  using (exists (
+    select 1 from posts p
+    where p.id = post_id and is_staff()
+      and (p.author_id = auth.uid() or is_admin())
+  ))
+  with check (exists (
+    select 1 from posts p
+    where p.id = post_id and is_staff()
+      and (p.author_id = auth.uid() or is_admin())
+  ));
 
 -- Proposals: written server-side only, staff read.
 --
@@ -511,9 +660,16 @@ grant select on issue_translations   to anon, authenticated;
 grant select on article_authors      to anon, authenticated;
 grant select on author_translations  to anon, authenticated;
 
+grant select on posts             to anon, authenticated;
+grant select on post_translations to anon, authenticated;
+
 -- authors is column-restricted: everything except `email`.
 grant select (id, family_name, given_name, orcid, website_url, created_at)
   on authors to anon, authenticated;
+
+-- profiles is column-restricted for the Weekly byline. `role` is withheld:
+-- which accounts are admins is not public information.
+grant select (id, handle, full_name, bio) on profiles to anon, authenticated;
 ```
 
 The localised view carries its own grant, in the Views section below — it cannot
@@ -521,8 +677,8 @@ be granted here because it does not exist yet at this point in the migration.
 Being `security_invoker`, it also needs the grants above on the tables it reads,
 which is why both are required.
 
-Nothing is granted to `anon` on `profiles`, `proposals`, `reviews`, or
-`editorial_decisions`. Proposals are written server-side with the service-role
+Beyond the byline columns above, nothing is granted to `anon` on `profiles`,
+and nothing at all on `proposals`, `reviews`, or `editorial_decisions`. Proposals are written server-side with the service-role
 key (§8 of `SPEC.md`), and the anon insert is denied at the grant level before
 RLS is even consulted.
 
@@ -536,6 +692,10 @@ until something can log in, granting them would be scope without a user.
 | `articles` | **Public** | Published PDFs. Permanent paths, no signed URLs. |
 | `covers` | Public | Issue cover images. |
 | `proposals` | **Private** | Uploaded proposal files. Signed URLs for staff only. |
+| `post-images` | Public | Images embedded in Weekly posts. |
+
+The sanitiser allows `<img>` only with a `src` inside `post-images`, so a
+sanitised post cannot hotlink to a third party or carry a tracking beacon.
 
 Paths below are **within** the bucket — the first segment is a folder in the
 `articles` bucket, not the bucket name repeated. The resulting public URL is
@@ -705,6 +865,41 @@ create constraint trigger articles_require_primary_translation
   deferrable initially deferred
   for each row execute function require_primary_translation();
 
+-- Weekly post slugs are permanent once published, for the same reason article
+-- slugs are: a published URL that moves is a broken link.
+create or replace function guard_post_slug() returns trigger
+language plpgsql as $$
+begin
+  if old.state = 'published' and new.slug is distinct from old.slug then
+    raise exception 'slug is immutable for published posts';
+  end if;
+  return new;
+end $$;
+
+create trigger posts_guard_slug before update on posts
+  for each row execute function guard_post_slug();
+
+create trigger posts_touch before update on posts
+  for each row execute function touch_updated_at();
+
+-- A published post must exist in at least one language.
+create or replace function require_post_translation() returns trigger
+language plpgsql as $$
+begin
+  if new.state = 'published' and not exists (
+    select 1 from post_translations t
+    where t.post_id = new.id and coalesce(t.title, '') <> ''
+  ) then
+    raise exception 'published post % has no translations', new.id;
+  end if;
+  return null;
+end $$;
+
+create constraint trigger posts_require_translation
+  after insert or update on posts
+  deferrable initially deferred
+  for each row execute function require_post_translation();
+
 -- Staff accounts are invite-only: an invite from the Supabase dashboard creates
 -- the auth.users row and this mirrors it into profiles as an editor. There is
 -- no public signup anywhere in this project.
@@ -757,6 +952,10 @@ Seed before building any UI:
 - 5 authors, at least two shared across articles, with `en`/`ru`/`uz` display
   names including Cyrillic forms in `ru`
 - 2 proposals in different states
+- 2 editors with handles, and 3 Weekly posts: one in all three languages, one
+  in English only, and one draft. The English-only post is what proves a
+  language filter removes it rather than falling back, and the draft proves
+  post RLS holds.
 
 The single-locale Uzbek article, the draft article, and the online-first article
 are the seeds that catch the bugs that matter. Seeding is not done until an

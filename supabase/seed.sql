@@ -26,8 +26,14 @@ insert into auth.users (
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Editor Two"}'::jsonb, '', '', '', '');
 
--- handle_new_user() mirrors both into profiles as 'editor'; promote one.
-update profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000000a1';
+-- handle_new_user() mirrors both into profiles as 'editor'; promote one and
+-- give both a public handle, which is what /weekly/{handle} routes on.
+update profiles set role = 'admin', handle = 'admin-one',
+       bio = 'Editor-in-chief.'
+ where id = '00000000-0000-0000-0000-0000000000a1';
+update profiles set handle = 'editor-two',
+       bio = 'Writes on monetary policy.'
+ where id = '00000000-0000-0000-0000-0000000000a2';
 
 insert into issues (id, volume, number, year, published_at, state) values
   ('00000000-0000-0000-0000-0000000000b1', 1, 1, 2026, now(), 'published'),
@@ -144,5 +150,50 @@ insert into proposals (name, email, affiliation, title, abstract, locale, state,
    'Labour migration and rural incomes', 'A proposal abstract.', 'uz', 'new', '203.0.113.7'),
   ('Pyotr Sokolov', 'pyotr@example.ru', 'HSE University',
    'Exchange rate pass-through', 'Another proposal abstract.', 'ru', 'contacted', '203.0.113.8');
+
+-- Weekly series (SPEC.md -> Weekly). Two editors, three posts.
+
+-- 1: all three languages
+insert into posts (id, author_id, slug, state, published_at) values
+  ('00000000-0000-0000-0000-0000000000e1',
+   '00000000-0000-0000-0000-0000000000a1', 'weekly-cap-2026-w12',
+   'published', '2026-03-20T08:00:00Z');
+
+insert into post_translations (post_id, locale, title, excerpt, body) values
+  ('00000000-0000-0000-0000-0000000000e1', 'en',
+   'Weekly scientific cap: week 12',
+   'Trade data, and what the revisions actually changed.',
+   '<p>The revised trade figures are less dramatic than the headline suggested.</p><h2>What changed</h2><p>Two quarters were restated.</p>'),
+  ('00000000-0000-0000-0000-0000000000e1', 'ru',
+   'Научный обзор недели: неделя 12',
+   'Торговые данные и что изменили пересмотры.',
+   '<p>Пересмотренные торговые показатели менее драматичны, чем следовало из заголовков.</p>'),
+  ('00000000-0000-0000-0000-0000000000e1', 'uz',
+   'Haftalik ilmiy sharh: 12-hafta',
+   'Savdo malumotlari va qayta korib chiqishlar.',
+   '<p>Qayta korib chiqilgan savdo korsatkichlari sarlavhalarga qaraganda kamroq keskin.</p>');
+
+-- 2: ENGLISH ONLY. This is the seed that proves a language filter removes a
+--    post rather than falling back to another language the way articles do.
+insert into posts (id, author_id, slug, state, published_at) values
+  ('00000000-0000-0000-0000-0000000000e2',
+   '00000000-0000-0000-0000-0000000000a2', 'inflation-note-2026-w12',
+   'published', '2026-03-21T08:00:00Z');
+
+insert into post_translations (post_id, locale, title, excerpt, body) values
+  ('00000000-0000-0000-0000-0000000000e2', 'en',
+   'A note on the March inflation print',
+   'Why the core measure matters more this month.',
+   '<p>Core inflation decelerated while the headline did not.</p>');
+
+-- 3: draft. Must be invisible to anon.
+insert into posts (id, author_id, slug, state, published_at) values
+  ('00000000-0000-0000-0000-0000000000e3',
+   '00000000-0000-0000-0000-0000000000a1', 'unpublished-weekly-draft',
+   'draft', null);
+
+insert into post_translations (post_id, locale, title, excerpt, body) values
+  ('00000000-0000-0000-0000-0000000000e3', 'en',
+   'Unpublished weekly draft', null, '<p>Not for the public.</p>');
 
 commit;
