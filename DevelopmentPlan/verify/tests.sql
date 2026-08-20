@@ -29,10 +29,34 @@ insert into test_results
   from (select id, family_name, given_name from authors) a;
 insert into test_results
   select 'anon cannot see draft issue', count(*)::text, '1' from issues;
-insert into test_results
-  select 'anon cannot read proposals', count(*)::text, '0' from proposals;
-
 reset role;
+
+-- Proposals and author emails are denied at the GRANT level, before RLS is
+-- consulted: they raise 42501 rather than returning an empty set. Asserting the
+-- error is the point -- an earlier version of prelude.sql granted anon a
+-- blanket select, so these read as empty and the harness passed while the real
+-- Supabase stack denied every table.
+do $$
+begin
+  begin
+    set local role anon;
+    perform count(*) from proposals;
+    insert into test_results values ('anon denied on proposals', 'READ SUCCEEDED', 'denied');
+  exception when insufficient_privilege then
+    insert into test_results values ('anon denied on proposals', 'denied', 'denied');
+  end;
+end $$;
+
+do $$
+begin
+  begin
+    set local role anon;
+    perform email from authors limit 1;
+    insert into test_results values ('anon denied on authors.email', 'READ SUCCEEDED', 'denied');
+  exception when insufficient_privilege then
+    insert into test_results values ('anon denied on authors.email', 'denied', 'denied');
+  end;
+end $$;
 
 -- -------------------------------------------------- field-level fallback
 -- uz-only article requested in ru: falls back to primary_language (uz)
