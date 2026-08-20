@@ -84,5 +84,23 @@
   "common": {
     "readMore": "Read more",
     "backToHome": "Back to home"
+  },
+  "search": {
+    "allLanguages": "Search all languages",
+    "any": "Any",
+    "filterJel": "JEL code",
+    "filterType": "Type",
+    "filterYear": "Year",
+    "next": "Next",
+    "noResults": "Nothing matched. Try fewer words, or search all languages.",
+    "pageOf": "Page {page} of {total}",
+    "previous": "Previous",
+    "queryLabel": "Search articles",
+    "reset": "Reset",
+    "resultCount": "{count, plural, =0 {No results} one {# result} other {# results}}",
+    "submit": "Search",
+    "title": "Search",
+    "weeklyNote": "Weekly posts are searched separately from articles.",
+    "weeklyTitle": "Search Weekly"
   }
 }

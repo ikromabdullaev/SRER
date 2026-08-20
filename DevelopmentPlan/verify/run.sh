@@ -18,7 +18,10 @@ $PSQL -d postgres -q \
   -c "drop role if exists service_role;" \
   -c "create database journal;"
 
-for f in prelude schema seed tests; do
+# The seed comes from supabase/seed.sql -- the same file the real stack uses.
+# Keeping a second copy here is what let the two drift apart before.
+docker cp ../../supabase/seed.sql srer-pg:/tmp/seed.sql >/dev/null
+for f in prelude schema tests; do
   docker cp "$f.sql" srer-pg:/tmp/"$f.sql" >/dev/null
 done
 

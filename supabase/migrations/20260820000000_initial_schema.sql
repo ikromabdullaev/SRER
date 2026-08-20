@@ -545,7 +545,247 @@ where a.state = 'published';
 
 grant select on published_articles_localised to anon, authenticated;
 
--- ===== block 18 : Triggers =====
+-- ===== block 18 : Search =====
+create or replace function locale_regconfig(l locale_code)
+returns regconfig language sql immutable parallel safe as $$
+  select case l
+           when 'en' then 'english'::regconfig
+           when 'ru' then 'russian'::regconfig
+           else 'simple'::regconfig      -- uz: Postgres ships no Uzbek dictionary
+         end;
+$$;
+
+create or replace function search_articles(
+  search_query  text,
+  in_locale     locale_code,
+  all_locales   boolean      default false,
+  filter_type   article_type default null,
+  filter_year   int          default null,
+  filter_jel    text         default null,
+  filter_issue  uuid         default null,
+  page_limit    int          default 20,
+  page_offset   int          default 0
+)
+returns table (
+  id             uuid,
+  slug           text,
+  matched_locale locale_code,
+  title          text,
+  abstract       text,
+  published_at   timestamptz,
+  volume         int,
+  number         int,
+  score          real,
+  total          bigint
+)
+language sql stable parallel safe
+set search_path = public, pg_temp
+as $$
+with q as (
+  select nullif(btrim(search_query), '') as text
+),
+matches as (
+  select
+    t.article_id,
+    t.locale,
+    case
+      when (select text from q) is null then 0::real
+      else
+        ts_rank_cd(
+          t.search_vector,
+          websearch_to_tsquery(locale_regconfig(t.locale), (select text from q))
+        )
+        -- Uzbek gets no stemming, so `iqtisodiyot` will not match
+        -- `iqtisodiyotning`. Trigram carries that load, blended in rather than
+        -- replacing the lexeme match.
+        --
+        -- word_similarity, NOT similarity: the latter compares whole strings,
+        -- so a long title dilutes the score below any usable threshold.
+        -- Measured on the seed data, `iqtisodiyotning` against the Uzbek title
+        -- scores 0.25 whole-string (no match at the 0.3 threshold) and 0.74
+        -- word-wise. Whole-string similarity silently breaks Uzbek search.
+        + case
+            when t.locale = 'uz' then 0.5 * greatest(
+              word_similarity((select text from q), t.title),
+              word_similarity((select text from q), coalesce(t.abstract, '')))
+            else 0
+          end
+    end::real as raw_score
+  from article_translations t
+  -- With a query, scope to the locale's own text: you can only match words
+  -- that exist. With NO query this is a browse view, and articles never hide
+  -- (SPEC.md 4.3) -- so every published article must appear regardless of
+  -- which locales it has been translated into, and the view resolves the
+  -- fallback title. Scoping browse by locale silently shortened the Russian
+  -- list to the subset with Russian translations.
+  where ((select text from q) is null or all_locales or t.locale = in_locale)
+    and (
+      (select text from q) is null
+      or t.search_vector @@ websearch_to_tsquery(
+           locale_regconfig(t.locale), (select text from q))
+      -- `<%`, not `%>`. They are commutators: `a %> b` tests
+      -- word_similarity(b, a), which is the reverse of what is wanted and
+      -- silently returns false for every long title. `<%` also puts the
+      -- indexed column on the right, which is the side the GIN trigram index
+      -- can accelerate.
+      or (t.locale = 'uz'
+          and ((select text from q) <% t.title
+               or (select text from q) <% coalesce(t.abstract, '')))
+    )
+),
+by_author as (
+  -- SPEC.md 6: author names are searchable too.
+  select distinct aa.article_id
+  from article_authors aa
+  join authors a on a.id = aa.author_id
+  left join author_translations atr on atr.author_id = a.id
+  where (select text from q) is not null
+    and (a.family_name % (select text from q)
+         or atr.display_name % (select text from q))
+),
+normalised as (
+  -- Ranks from different dictionaries are not comparable: an `english` score
+  -- and a `simple` score sit on different scales, and uz additionally carries
+  -- a trigram component. Normalise within each locale before merging, or the
+  -- union systematically buries one language.
+  select
+    article_id,
+    locale,
+    case
+      when max(raw_score) over (partition by locale) > 0
+        then raw_score / max(raw_score) over (partition by locale)
+      else 0
+    end::real as score
+  from matches
+),
+scored as (
+  -- Author matches join AFTER normalisation, at a fixed 0.5. Mixing them in
+  -- beforehand let a raw 0.2 outrank a perfect title match, because ts_rank_cd
+  -- values are small in absolute terms -- the author hit won on scale alone.
+  -- Post-normalisation, a name match ranks below an exact title match and
+  -- above a weak one, which is the intended ordering.
+  select article_id, locale, score from normalised
+  union all
+  select article_id, in_locale, 0.5::real from by_author
+),
+best as (
+  -- De-duplicate by article: one row per article, keeping its best locale.
+  select
+    article_id,
+    (array_agg(locale order by score desc))[1] as locale,
+    max(score) as score
+  from scored
+  group by article_id
+),
+filtered as (
+  select b.locale as matched_locale, b.score, v.*
+  from best b
+  join published_articles_localised v
+    on v.id = b.article_id and v.requested_locale = in_locale
+  where (filter_type  is null or v.type = filter_type)
+    -- Year comes from published_at, not issues.year: an online-first article
+    -- has no issue and would vanish from every year-filtered view.
+    and (filter_year  is null or extract(year from v.published_at) = filter_year)
+    and (filter_jel   is null or filter_jel = any (v.jel_codes))
+    and (filter_issue is null or v.issue_id = filter_issue)
+)
+select
+  f.id, f.slug, f.matched_locale, f.title, f.abstract, f.published_at,
+  f.volume, f.number, f.score,
+  count(*) over () as total
+from filtered f
+order by f.score desc, f.published_at desc nulls last
+limit page_limit offset page_offset;
+$$;
+
+-- Posts are searched separately and never mixed into article results: they are
+-- two different categories (SPEC.md -> Weekly -> Search).
+create or replace function search_posts(
+  search_query  text,
+  filter_locale locale_code default null,
+  page_limit    int         default 20,
+  page_offset   int         default 0
+)
+returns table (
+  id             uuid,
+  slug           text,
+  handle         text,
+  author_name    text,
+  matched_locale locale_code,
+  title          text,
+  excerpt        text,
+  published_at   timestamptz,
+  score          real,
+  total          bigint
+)
+language sql stable parallel safe
+set search_path = public, pg_temp
+as $$
+with q as (
+  select nullif(btrim(search_query), '') as text
+),
+matches as (
+  select
+    t.post_id,
+    t.locale,
+    t.title,
+    t.excerpt,
+    case
+      when (select text from q) is null then 0::real
+      else
+        ts_rank_cd(
+          t.search_vector,
+          websearch_to_tsquery(locale_regconfig(t.locale), (select text from q))
+        )
+        + case
+            when t.locale = 'uz'
+              then 0.5 * word_similarity((select text from q), t.title)
+            else 0
+          end
+    end::real as raw_score
+  from post_translations t
+  where (filter_locale is null or t.locale = filter_locale)
+    and (
+      (select text from q) is null
+      or t.search_vector @@ websearch_to_tsquery(
+           locale_regconfig(t.locale), (select text from q))
+      or (t.locale = 'uz' and (select text from q) <% t.title)
+    )
+),
+normalised as (
+  select
+    post_id, locale, title, excerpt,
+    case
+      when max(raw_score) over (partition by locale) > 0
+        then raw_score / max(raw_score) over (partition by locale)
+      else 0
+    end::real as score
+  from matches
+),
+best as (
+  select distinct on (post_id)
+    post_id, locale, title, excerpt, score
+  from normalised
+  order by post_id, score desc
+)
+select
+  p.id, p.slug, pr.handle, pr.full_name,
+  b.locale, b.title, b.excerpt, p.published_at, b.score,
+  count(*) over () as total
+from best b
+join posts p on p.id = b.post_id and p.state = 'published'
+join profiles pr on pr.id = p.author_id
+order by b.score desc, p.published_at desc nulls last
+limit page_limit offset page_offset;
+$$;
+
+grant execute on function search_articles(
+  text, locale_code, boolean, article_type, int, text, uuid, int, int
+) to anon, authenticated;
+grant execute on function search_posts(text, locale_code, int, int)
+  to anon, authenticated;
+
+-- ===== block 19 : Triggers =====
 create or replace function touch_updated_at() returns trigger
 language plpgsql as $$
 begin new.updated_at = now(); return new; end $$;

@@ -18,7 +18,7 @@ bash run.sh
 |---|---|
 | `extract.py` | Pulls every ```sql fence out of `../SCHEMA.md`, in order, into `schema.sql`. The doc is the source — nothing here duplicates it. |
 | `prelude.sql` | Stands in for what Supabase provisions: the `anon`/`authenticated`/`service_role` roles, the `auth` schema, `auth.users`, `auth.uid()`, and the default grants. Not part of the project schema. |
-| `seed.sql` | The seed set from `SCHEMA.md` → *Seed data*, with fixed UUIDs so tests can reference rows. |
+| seed data | Taken from `supabase/seed.sql` — the same file the real stack loads. There is deliberately no second copy here: when there was, the two drifted. |
 | `tests.sql` | 26 assertions. Prints a PASS/FAIL table and raises if any row fails. |
 | `schema.sql` | **Generated** by `extract.py` on every run. Never edit it; edit `../SCHEMA.md`. |
 

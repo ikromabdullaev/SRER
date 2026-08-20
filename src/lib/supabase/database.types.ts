@@ -664,6 +664,55 @@ export type Database = {
         }
         Returns: number
       }
+      locale_regconfig: {
+        Args: { l: Database["public"]["Enums"]["locale_code"] }
+        Returns: unknown
+      }
+      search_articles: {
+        Args: {
+          all_locales?: boolean
+          filter_issue?: string
+          filter_jel?: string
+          filter_type?: Database["public"]["Enums"]["article_type"]
+          filter_year?: number
+          in_locale: Database["public"]["Enums"]["locale_code"]
+          page_limit?: number
+          page_offset?: number
+          search_query: string
+        }
+        Returns: {
+          abstract: string
+          id: string
+          matched_locale: Database["public"]["Enums"]["locale_code"]
+          number: number
+          published_at: string
+          score: number
+          slug: string
+          title: string
+          total: number
+          volume: number
+        }[]
+      }
+      search_posts: {
+        Args: {
+          filter_locale?: Database["public"]["Enums"]["locale_code"]
+          page_limit?: number
+          page_offset?: number
+          search_query: string
+        }
+        Returns: {
+          author_name: string
+          excerpt: string
+          handle: string
+          id: string
+          matched_locale: Database["public"]["Enums"]["locale_code"]
+          published_at: string
+          score: number
+          slug: string
+          title: string
+          total: number
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       unaccent: { Args: { "": string }; Returns: string }

@@ -18,10 +18,26 @@ alter default privileges in schema public grant all on tables to service_role;
 create schema auth;
 grant usage on schema auth to anon, authenticated, service_role;
 
+-- Mirrors enough of Supabase's auth.users that ONE seed file serves both this
+-- harness and the real stack. An earlier version had a narrower shape, which
+-- forced a second copy of the seed here; the two promptly drifted and the
+-- harness broke on a column the real seed had been using for days.
 create table auth.users (
-  id                  uuid primary key default gen_random_uuid(),
-  email               text unique,
-  raw_user_meta_data  jsonb not null default '{}'::jsonb
+  instance_id             uuid,
+  id                      uuid primary key default gen_random_uuid(),
+  aud                     text,
+  role                    text,
+  email                   text unique,
+  encrypted_password      text,
+  email_confirmed_at      timestamptz,
+  created_at              timestamptz default now(),
+  updated_at              timestamptz default now(),
+  raw_app_meta_data       jsonb not null default '{}'::jsonb,
+  raw_user_meta_data      jsonb not null default '{}'::jsonb,
+  confirmation_token      text,
+  recovery_token          text,
+  email_change_token_new  text,
+  email_change            text
 );
 
 -- PostgREST sets request.jwt.claim.sub per request; tests set it directly.

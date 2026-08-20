@@ -236,3 +236,54 @@ section {
 .post-body pre {
   overflow-x: auto;
 }
+
+/* Search ---------------------------------------------------------------- */
+
+.search-form {
+  margin: 1.5rem 0;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.search-form__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-form__query {
+  flex: 1;
+}
+
+.search-form__query input {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.search-form__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  color: var(--ink-muted);
+}
+
+.search-form__filters input[type="number"],
+.search-form__filters input[type="text"] {
+  width: 7rem;
+  padding: 0.25rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.pagination button[disabled] {
+  opacity: 0.4;
+}

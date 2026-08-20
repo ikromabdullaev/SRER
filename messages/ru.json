@@ -84,5 +84,23 @@
   "common": {
     "readMore": "Подробнее",
     "backToHome": "На главную"
+  },
+  "search": {
+    "allLanguages": "Искать на всех языках",
+    "any": "Любой",
+    "filterJel": "Код JEL",
+    "filterType": "Тип",
+    "filterYear": "Год",
+    "next": "Вперёд",
+    "noResults": "Ничего не найдено. Попробуйте меньше слов или поиск на всех языках.",
+    "pageOf": "Страница {page} из {total}",
+    "previous": "Назад",
+    "queryLabel": "Поиск статей",
+    "reset": "Сбросить",
+    "resultCount": "{count, plural, =0 {Ничего не найдено} one {# результат} few {# результата} other {# результатов}}",
+    "submit": "Найти",
+    "title": "Поиск",
+    "weeklyNote": "Публикации еженедельника ищутся отдельно от статей.",
+    "weeklyTitle": "Поиск по еженедельнику"
   }
 }

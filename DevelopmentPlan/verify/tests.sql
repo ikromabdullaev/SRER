@@ -63,7 +63,7 @@ end $$;
 insert into test_results
   select 'uz-only article: ru request falls back',
          title || ' / ' || title_locale::text || ' / ' || translation_missing::text,
-         'Ozbekiston iqtisodiyoti / uz / true'
+         'Ozbekiston iqtisodiyotining raqamli transformatsiyasi / uz / true'
   from published_articles_localised
   where slug = 'ozbekiston-iqtisodiyoti' and requested_locale = 'ru';
 
@@ -85,7 +85,7 @@ insert into test_results
 insert into test_results
   select 'empty keywords fall through to en',
          array_to_string(keywords, ',') || ' / ' || keywords_locale::text,
-         'inflation / en'
+         'inflation,monetary policy / en'
   from published_articles_localised
   where slug = 'inflation-targeting-in-transition' and requested_locale = 'ru';
 
@@ -100,7 +100,7 @@ insert into test_results
 insert into test_results
   select 'online-first article is visible',
          count(*)::text || ' / ' || coalesce(max(volume)::text, 'null'), '3 / null'
-  from published_articles_localised where slug = 'remittances-and-consumption';
+  from published_articles_localised where slug = 'remittances-and-household-consumption';
 
 -- ------------------------------------------------------- generated column
 insert into test_results
@@ -156,7 +156,6 @@ end $$;
 do $$
 declare cases text[][] := array[
   array['slug',    'update articles set slug = ''renamed'' where id = ''00000000-0000-0000-0000-0000000000d1'''],
-  array['doi',     'update articles set doi = ''10.99999/hijack'' where id = ''00000000-0000-0000-0000-0000000000d1'''],
   array['pdf_url', 'update articles set pdf_url = ''https://elsewhere/x.pdf'' where id = ''00000000-0000-0000-0000-0000000000d1''']
 ];
   c text[];
@@ -173,6 +172,30 @@ begin
                 'rejected');
     end;
   end loop;
+end $$;
+
+-- DOIs are out of scope, so every seeded article has doi = null. Assigning one
+-- later must WORK (that is what makes adoption a plain UPDATE rather than a
+-- migration); changing it afterwards must not.
+do $$
+begin
+  update articles set doi = '10.99999/assigned-later'
+    where id = '00000000-0000-0000-0000-0000000000d1';
+  insert into test_results values ('doi can be assigned after publication', 'ok', 'ok');
+exception when others then
+  insert into test_results values ('doi can be assigned after publication', sqlerrm, 'ok');
+end $$;
+
+do $$
+begin
+  begin
+    update articles set doi = '10.99999/changed-again'
+      where id = '00000000-0000-0000-0000-0000000000d1';
+    insert into test_results values ('assigned doi is then immutable', 'UPDATE SUCCEEDED', 'rejected');
+  exception when others then
+    insert into test_results values ('assigned doi is then immutable',
+      case when sqlerrm like '%immutable%' then 'rejected' else sqlerrm end, 'rejected');
+  end;
 end $$;
 
 -- withdrawing then renaming must still be refused
@@ -195,6 +218,65 @@ begin
     where id = '00000000-0000-0000-0000-0000000000d4';
 end $$;
 
+-- ------------------------------------------------------------------ search
+-- Added at build step 5. These guard the two failure modes that look like
+-- success: Uzbek search silently returning nothing, and browse quietly
+-- shortening itself to the articles that happen to have a translation.
+
+insert into test_results
+  select 'uz search survives morphology', count(*)::text, '1'
+  from search_articles('iqtisodiyotning', 'uz');
+insert into test_results
+  select 'uz exact term still matches', count(*)::text, '1'
+  from search_articles('iqtisodiyot', 'uz') where slug = 'ozbekiston-iqtisodiyoti';
+insert into test_results
+  select 'nonsense matches nothing', count(*)::text, '0'
+  from search_articles('zzzqqqxyz', 'uz');
+insert into test_results
+  select 'en stemmed search works', count(*)::text, '1'
+  from search_articles('trades', 'en');
+insert into test_results
+  select 'ru stemmed search works', count(*)::text, '1'
+  from search_articles('инфляции', 'ru');
+
+-- Browse must not vary by locale: articles never hide (SPEC.md 4.3).
+insert into test_results
+  select 'browse count is locale-invariant',
+         (select count(*)::text from search_articles('', 'en')) || '/' ||
+         (select count(*)::text from search_articles('', 'ru')) || '/' ||
+         (select count(*)::text from search_articles('', 'uz')),
+         '4/4/4';
+insert into test_results
+  select 'uz-only article appears in ru browse', count(*)::text, '1'
+  from search_articles('', 'ru') where slug = 'ozbekiston-iqtisodiyoti';
+
+-- A query, unlike a browse, is scoped to the locale's own text.
+insert into test_results
+  select 'query scopes to locale', count(*)::text, '0'
+  from search_articles('trade', 'ru');
+insert into test_results
+  select 'all-languages finds it', count(*)::text, '1'
+  from search_articles('trade', 'ru', true);
+
+-- Author names are searchable, and rank below an exact title match.
+insert into test_results
+  select 'author name search works', count(*)::text, '2'
+  from search_articles('Karimov', 'en');
+insert into test_results
+  select 'title match outranks author match',
+         (select round(max(score)::numeric, 1)::text from search_articles('trade', 'en')),
+         '1.0';
+
+-- Posts search is separate and excludes drafts.
+insert into test_results
+  select 'posts search finds published', count(*)::text, '1'
+  from search_posts('inflation');
+insert into test_results
+  select 'posts search hides drafts', count(*)::text, '0'
+  from search_posts('Unpublished weekly draft');
+insert into test_results
+  select 'posts language filter removes', count(*)::text, '1'
+  from search_posts('', 'ru');
 -- ----------------------------------------------------------------- report
 select case when actual is not distinct from expected then 'PASS' else 'FAIL' end as result,
        name, actual, expected
@@ -211,3 +293,4 @@ begin
   end if;
   raise notice 'ALL % TESTS PASSED', (select count(*) from test_results);
 end $$;
+

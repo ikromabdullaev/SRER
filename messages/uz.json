@@ -84,5 +84,23 @@
   "common": {
     "readMore": "Batafsil",
     "backToHome": "Bosh sahifaga"
+  },
+  "search": {
+    "allLanguages": "Barcha tillarda qidirish",
+    "any": "Har qanday",
+    "filterJel": "JEL kodi",
+    "filterType": "Turi",
+    "filterYear": "Yil",
+    "next": "Keyingi",
+    "noResults": "Hech narsa topilmadi. Kamroq so'z bilan yoki barcha tillarda qidiring.",
+    "pageOf": "{total} dan {page}-sahifa",
+    "previous": "Oldingi",
+    "queryLabel": "Maqolalarni qidirish",
+    "reset": "Tozalash",
+    "resultCount": "{count, plural, =0 {Hech narsa topilmadi} other {# ta natija}}",
+    "submit": "Qidirish",
+    "title": "Qidiruv",
+    "weeklyNote": "Haftalik nashrlar maqolalardan alohida qidiriladi.",
+    "weeklyTitle": "Haftalik bo'yicha qidiruv"
   }
 }
