@@ -338,3 +338,220 @@ section {
   color: #a3231d;
   font-size: 0.9rem;
 }
+
+/* Admin: editor ---------------------------------------------------------- */
+
+.admin-ok {
+  color: #1d6a3a;
+  font-size: 0.9rem;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+  padding: 0.5rem 0.5rem 0.5rem 0;
+}
+
+.lang-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 1.5rem 0 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.lang-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-bottom: none;
+  background: #f6f6f4;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lang-tabs button.is-active {
+  background: var(--surface);
+  font-weight: 600;
+}
+
+.tab-dot {
+  font-size: 0.7rem;
+  color: var(--rule);
+}
+
+.tab-dot--on {
+  color: #1d6a3a;
+}
+
+.editor-label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.rich-text {
+  border: 1px solid var(--rule);
+}
+
+.rich-text__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  border-bottom: 1px solid var(--rule);
+  background: #f6f6f4;
+}
+
+.rich-text__toolbar button {
+  min-width: 2rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rich-text__toolbar button.is-active {
+  border-color: var(--rule);
+  background: var(--surface);
+  font-weight: 600;
+}
+
+.rich-text__toolbar button[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.rich-text__sep {
+  width: 1px;
+  height: 1.2rem;
+  margin: 0 0.35rem;
+  background: var(--rule);
+}
+
+.rich-text__surface {
+  min-height: 18rem;
+  padding: 1rem;
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.6;
+  outline: none;
+}
+
+.rich-text__surface:focus-visible {
+  outline: 2px solid #4a6fa5;
+  outline-offset: -2px;
+}
+
+.rich-text__surface img {
+  max-width: 100%;
+  height: auto;
+}
+
+.rich-text__surface table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.rich-text__surface td,
+.rich-text__surface th {
+  border: 1px solid var(--rule);
+  padding: 0.35rem 0.5rem;
+}
+
+/* Admin: article form --------------------------------------------------- */
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.field-row label {
+  flex: 1 1 8rem;
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--notice-rule);
+  background: var(--notice);
+  font-size: 0.75rem;
+}
+
+.tab-primary {
+  margin-left: 0.4rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.author-list {
+  padding-left: 1.2rem;
+}
+
+.author-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0;
+}
+
+.author-list__name {
+  min-width: 14rem;
+}
+
+.author-list__corresponding {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.author-options {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0;
+  border: 1px solid var(--rule);
+}
+
+.author-options li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.author-options button {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.author-options button:hover {
+  background: #f2f4f8;
+}
+
+.author-new {
+  border: 1px solid var(--rule);
+  padding: 1rem;
+  margin: 0.75rem 0;
+}

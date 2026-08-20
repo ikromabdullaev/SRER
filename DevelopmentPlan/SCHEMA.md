@@ -565,10 +565,24 @@ create policy "public reads article authors of published articles"
     where a.id = article_id and a.state = 'published'
   ));
 
--- Staff full access
+-- Staff full access to the content tables. Spelled out rather than left as
+-- "repeat for every table": a table quietly missing its policy is a table the
+-- admin UI cannot write, and the failure surfaces as a confusing empty result
+-- rather than an error.
 create policy "staff manage articles" on articles
   for all using (is_staff()) with check (is_staff());
--- ...repeat for every content table...
+create policy "staff manage article translations" on article_translations
+  for all using (is_staff()) with check (is_staff());
+create policy "staff manage article authors" on article_authors
+  for all using (is_staff()) with check (is_staff());
+create policy "staff manage authors" on authors
+  for all using (is_staff()) with check (is_staff());
+create policy "staff manage author translations" on author_translations
+  for all using (is_staff()) with check (is_staff());
+create policy "staff manage issues" on issues
+  for all using (is_staff()) with check (is_staff());
+create policy "staff manage issue translations" on issue_translations
+  for all using (is_staff()) with check (is_staff());
 
 -- Profiles. There is no public signup: staff accounts are provisioned by
 -- inviting the user in the Supabase dashboard, which creates the `auth.users`
@@ -691,8 +705,27 @@ and nothing at all on `proposals`, `reviews`, or `editorial_decisions`. Proposal
 key (§8 of `SPEC.md`), and the anon insert is denied at the grant level before
 RLS is even consulted.
 
-Write grants for `authenticated` arrive with the admin UI at build step 6;
-until something can log in, granting them would be scope without a user.
+Write grants for `authenticated`. Every row is still gated by the staff
+policies above -- there is no public signup, so an authenticated session is a
+staff session, but the policy is what enforces that rather than the assumption.
+
+```sql
+grant insert, update, delete on
+  articles, article_translations, article_authors,
+  authors, author_translations,
+  issues, issue_translations,
+  posts, post_translations
+  to authenticated;
+
+-- Staff read drafts through their own session, so they need select on the
+-- tables the public cannot see rows in.
+grant select on proposals to authenticated;
+grant insert, update on proposals to authenticated;
+```
+
+Deliberately absent: any grant that lets `authenticated` write `profiles`
+beyond what the admin policy allows, and any `delete` on `proposals` -- an
+enquiry that has been answered is filed, not erased.
 
 ## Storage buckets
 
@@ -1392,6 +1425,98 @@ record with elevated rights regardless of RLS. The grant decides who may call
 it at all; `is_staff()` decides whether the call proceeds. Neither is
 sufficient alone, and the default `PUBLIC` grant is what makes the first one
 easy to get wrong.
+
+### `save_post`
+
+The Weekly equivalent, and it exists for the same reason: a published post
+must have at least one translation, the constraint trigger is deferred to
+commit, and supabase-js cannot span a transaction across separate inserts.
+
+Unlike `publish_article`, this one enforces **ownership**: an editor may write
+their own series and an admin may write anyone's. That rule lives here as well
+as in the RLS policies, because a `security definer` function bypasses the
+policies of the tables it writes.
+
+```sql
+create or replace function save_post(payload jsonb)
+returns uuid
+language plpgsql security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_post_id uuid;
+  v_author_id uuid;
+  v_translation jsonb;
+begin
+  if not is_staff() then
+    raise exception 'not authorised';
+  end if;
+
+  v_post_id := nullif(payload->>'id', '')::uuid;
+
+  -- An editor writes their own series; an admin writes anyone's.
+  v_author_id := coalesce(nullif(payload->>'author_id', '')::uuid, auth.uid());
+  if v_author_id <> auth.uid() and not is_admin() then
+    raise exception 'not authorised to write another editor''s series';
+  end if;
+
+  if v_post_id is null then
+    insert into posts (author_id, slug, state, published_at)
+    values (
+      v_author_id,
+      payload->>'slug',
+      coalesce(nullif(payload->>'state', ''), 'draft')::publish_state,
+      nullif(payload->>'published_at', '')::timestamptz
+    )
+    returning id into v_post_id;
+  else
+    -- Re-check ownership of the row as it stands, not just the payload:
+    -- otherwise an editor could pass someone else's post id with their own
+    -- author_id and take it over.
+    if not exists (
+      select 1 from posts p
+      where p.id = v_post_id and (p.author_id = auth.uid() or is_admin())
+    ) then
+      raise exception 'not authorised to write this post';
+    end if;
+
+    update posts set
+      author_id    = v_author_id,
+      slug         = payload->>'slug',
+      state        = coalesce(nullif(payload->>'state', ''), 'draft')::publish_state,
+      published_at = nullif(payload->>'published_at', '')::timestamptz
+    where id = v_post_id;
+  end if;
+
+  -- A language with no title is a language the post was not written in. It is
+  -- removed, not stored empty: the presence of a row is what makes the post
+  -- exist in that locale (SPEC.md -> Weekly -> Languages).
+  delete from post_translations where post_id = v_post_id;
+
+  for v_translation in
+    select * from jsonb_array_elements(coalesce(payload->'translations', '[]'::jsonb))
+  loop
+    continue when coalesce(btrim(v_translation->>'title'), '') = '';
+
+    insert into post_translations (post_id, locale, title, excerpt, body)
+    values (
+      v_post_id,
+      (v_translation->>'locale')::locale_code,
+      btrim(v_translation->>'title'),
+      nullif(btrim(coalesce(v_translation->>'excerpt', '')), ''),
+      -- Already sanitised by the caller. The column is documented as holding
+      -- sanitised HTML; this function does not re-clean it, so the server
+      -- action that calls it must never be bypassed.
+      coalesce(v_translation->>'body', '')
+    );
+  end loop;
+
+  return v_post_id;
+end $$;
+
+revoke execute on function save_post(jsonb) from public;
+grant execute on function save_post(jsonb) to authenticated;
+```
 
 ## Seed data
 

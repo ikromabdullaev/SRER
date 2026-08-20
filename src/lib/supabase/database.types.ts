@@ -668,6 +668,8 @@ export type Database = {
         Args: { l: Database["public"]["Enums"]["locale_code"] }
         Returns: unknown
       }
+      publish_article: { Args: { payload: Json }; Returns: string }
+      save_post: { Args: { payload: Json }; Returns: string }
       search_articles: {
         Args: {
           all_locales?: boolean

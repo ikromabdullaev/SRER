@@ -15,6 +15,12 @@ grant usage on schema public to anon, authenticated, service_role;
 -- adds none, so the harness fails the same way production would.
 alter default privileges in schema public grant all on tables to service_role;
 
+-- Supabase installs contrib extensions into an `extensions` schema and the
+-- seed uses extensions.crypt() to set local dev passwords.
+create schema extensions;
+grant usage on schema extensions to anon, authenticated, service_role;
+create extension if not exists pgcrypto with schema extensions;
+
 create schema auth;
 grant usage on schema auth to anon, authenticated, service_role;
 
