@@ -132,38 +132,40 @@ export default async function WeeklyPostPage({
   };
 
   return (
-    <article lang={localeHtmlLang[post.locale]}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+    <div className="shell">
+      <article className="post" lang={localeHtmlLang[post.locale]}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
 
-      <h1>{post.title}</h1>
+        <h1>{post.title}</h1>
 
-      <p className="article__meta">
-        <Link href={`/weekly/${post.author.handle}`}>
-          {t("byline", { name: post.author.fullName })}
-        </Link>
-        {post.publishedAt && ` · ${dateFormat.format(new Date(post.publishedAt))}`}
-        {" · "}
-        {t("availableIn")}:{" "}
-        {post.availableLocales.map((l) => l.toUpperCase()).join(" / ")}
-      </p>
+        <p className="article__meta">
+          <Link href={`/weekly/${post.author.handle}`}>
+            {t("byline", { name: post.author.fullName })}
+          </Link>
+          {post.publishedAt && ` · ${dateFormat.format(new Date(post.publishedAt))}`}
+          {" · "}
+          {t("availableIn")}:{" "}
+          {post.availableLocales.map((l) => l.toUpperCase()).join(" / ")}
+        </p>
 
-      {/*
-        Sanitised on save, server-side, against a strict allowlist -- the
-        database column is documented as holding sanitised HTML and nothing
-        else. The editor that produces it arrives at build step 6; until then
-        the only writer is the seed.
-      */}
-      <div
-        className="post-body"
-        dangerouslySetInnerHTML={{ __html: post.body }}
-      />
+        {/*
+          Sanitised on save, server-side, against a strict allowlist -- the
+          database column is documented as holding sanitised HTML and nothing
+          else. The editor that produces it arrives at build step 6; until then
+          the only writer is the seed.
+        */}
+        <div
+          className="post-body"
+          dangerouslySetInnerHTML={{ __html: post.body }}
+        />
 
-      <p>
-        <Link href="/weekly">{t("backToWeekly")}</Link>
-      </p>
-    </article>
+        <p className="post-tail">
+          <Link href="/weekly">{t("backToWeekly")}</Link>
+        </p>
+      </article>
+    </div>
   );
 }

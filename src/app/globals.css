@@ -870,14 +870,28 @@ time,
 
 .post h1 {
   font-size: clamp(1.85rem, 1.35rem + 2.1vw, 2.9rem);
-  max-width: 22ch;
+  /* No ch cap: the column is 40rem now, and a 22ch limit inside it broke a
+     six-word title across three lines. The column is the measure. */
   margin-bottom: var(--s5);
 }
 
 .post-body {
-  /* `.post` carries the measure now; a second cap here would re-create the
-     lopsided column inside a centred one. */
+  /* `.post` carries the measure. This must stay `none` rather than absent:
+     the page renders `.post-body` as a bare <div>, and a div outside any
+     capped container is as wide as the viewport. That is what happened when
+     the width moved to `.post` before `.post` existed in the markup. */
   max-width: none;
+}
+
+/* The way back, on a rule. A 42,000-word issue ends a long way from the
+   navigation. */
+.post-tail {
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s4);
+  margin-top: var(--s8);
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
 }
 
 /* A Weekly issue can run to forty headings across four levels, and at that
@@ -1899,6 +1913,16 @@ main > table {
   border-top: 2px solid var(--rule-strong);
   padding-top: var(--s4);
   margin: var(--s8) 0 var(--s4);
+}
+
+/* A page whose first block is a section heading would stack two 2px ink rules
+   a line apart — the h1's and the h2's — which states the same boundary twice.
+   The h1's rule already closed the title, so the first heading under it does
+   not open another. (about.md has a lede between them and is unaffected.) */
+.prose > div > h2:first-child {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
 }
 
 .prose h3 {
