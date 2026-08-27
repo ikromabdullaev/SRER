@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
 
@@ -15,6 +15,14 @@ const intlProxy = createMiddleware(routing);
 async function withSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  // getUser() below may rotate the refresh token, and Supabase invalidates the
+  // old one the moment it does. Whatever response we finally return has to
+  // carry the new cookies -- including a redirect, which is built fresh and
+  // starts with none. Dropping them hands the browser a token that has already
+  // been spent: the next request fails auth, bounces back here, and the
+  // browser gives up with ERR_TOO_MANY_REDIRECTS.
+  const rotated: { name: string; value: string; options: CookieOptions }[] = [];
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -28,6 +36,7 @@ async function withSession(request: NextRequest) {
           response = NextResponse.next({ request });
           for (const { name, value, options } of items) {
             response.cookies.set(name, value, options);
+            rotated.push({ name, value, options });
           }
         },
       },
@@ -40,6 +49,15 @@ async function withSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  /** A redirect that keeps whatever the session refresh just issued. */
+  function redirect(url: URL) {
+    const result = NextResponse.redirect(url);
+    for (const { name, value, options } of rotated) {
+      result.cookies.set(name, value, options);
+    }
+    return result;
+  }
+
   const { pathname } = request.nextUrl;
   const isLogin = pathname === "/admin/login";
 
@@ -48,14 +66,14 @@ async function withSession(request: NextRequest) {
     url.pathname = "/admin/login";
     // Come back to where they were headed once signed in.
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    return redirect(url);
   }
 
   if (user && isLogin) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin";
     url.search = "";
-    return NextResponse.redirect(url);
+    return redirect(url);
   }
 
   return response;

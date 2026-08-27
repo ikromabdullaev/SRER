@@ -2,7 +2,11 @@
 -- Every row printed at the end must read PASS.
 
 create table test_results (name text, actual text, expected text);
-grant all on test_results to anon;
+grant all on test_results to anon, authenticated;
+-- Both roles: an assertion that runs `set local role authenticated` writes
+-- its result while still wearing that role. Granting anon alone makes the
+-- INSERT raise 42501, which the assertion's own handler then records as the
+-- subject being denied. The test reports a failure it invented itself.
 
 -- ---------------------------------------------------------------- RLS, anon
 set role anon;
@@ -58,12 +62,56 @@ begin
   end;
 end $$;
 
+-- profiles.role: the column grant and the row policy have to agree.
+--
+-- Regression. `role` was granted to neither anon nor authenticated while the
+-- "staff read profiles" policy admitted the staff member's own row. Postgres
+-- denies the whole statement when any selected column is ungranted, so
+-- getStaffProfile() saw 42501, returned null, and the admin page redirected a
+-- perfectly valid session to /admin/login -- which the proxy redirected back
+-- to /admin, forever. A grant and a policy each look correct in isolation;
+-- only reading the actual column catches the disagreement.
+do $$
+begin
+  begin
+    set local role anon;
+    perform role from profiles limit 1;
+    insert into test_results values ('anon denied on profiles.role', 'READ SUCCEEDED', 'denied');
+  exception when insufficient_privilege then
+    insert into test_results values ('anon denied on profiles.role', 'denied', 'denied');
+  end;
+end $$;
+
+do $$
+begin
+  begin
+    set local role authenticated;
+    perform id, full_name, handle, role from profiles limit 1;
+    insert into test_results values ('authenticated may read profiles.role', 'granted', 'granted');
+  exception when insufficient_privilege then
+    insert into test_results values ('authenticated may read profiles.role', 'DENIED (42501)', 'granted');
+  end;
+end $$;
+
+-- The byline columns stay public: an editor with a handle is readable by anon
+-- so a Weekly post can carry a name.
+do $$
+begin
+  begin
+    set local role anon;
+    perform id, handle, full_name, bio from profiles limit 1;
+    insert into test_results values ('anon may read profiles byline columns', 'granted', 'granted');
+  exception when insufficient_privilege then
+    insert into test_results values ('anon may read profiles byline columns', 'DENIED (42501)', 'granted');
+  end;
+end $$;
+
 -- -------------------------------------------------- field-level fallback
 -- uz-only article requested in ru: falls back to primary_language (uz)
 insert into test_results
   select 'uz-only article: ru request falls back',
          title || ' / ' || title_locale::text || ' / ' || translation_missing::text,
-         'Ozbekiston iqtisodiyotining raqamli transformatsiyasi / uz / true'
+         'Oʼzbekiston iqtisodiyotining raqamli transformatsiyasi / uz / true'
   from published_articles_localised
   where slug = 'ozbekiston-iqtisodiyoti' and requested_locale = 'ru';
 

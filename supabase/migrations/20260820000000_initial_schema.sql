@@ -489,9 +489,19 @@ grant select on post_translations to anon, authenticated;
 grant select (id, slug, family_name, given_name, orcid, website_url, created_at)
   on authors to anon, authenticated;
 
--- profiles is column-restricted for the Weekly byline. `role` is withheld:
--- which accounts are admins is not public information.
-grant select (id, handle, full_name, bio) on profiles to anon, authenticated;
+-- profiles is column-restricted for the Weekly byline. `role` is withheld
+-- from anon: which accounts are admins is not public information.
+grant select (id, handle, full_name, bio) on profiles to anon;
+
+-- `authenticated` additionally reads `role`, and must. The "staff read
+-- profiles" policy above exists precisely so a signed-in editor can read
+-- their own row, and every admin surface calls getStaffProfile() to decide
+-- what that person may do. Granting the rows without the column denies the
+-- whole statement with 42501, and the admin shell then treats a perfectly
+-- valid session as "not staff" -- which the proxy answers by redirecting to
+-- the login page, which redirects back: ERR_TOO_MANY_REDIRECTS.
+-- Rows are still gated by the policies; anon remains blind to `role`.
+grant select (id, handle, full_name, bio, role) on profiles to authenticated;
 
 -- ===== block 17 : Grants =====
 grant insert, update, delete on
