@@ -29,14 +29,24 @@ export function ResetPasswordForm() {
   // Read the fragment once, during initialisation rather than in an effect:
   // an expired link is knowable before the first paint, and setting state
   // synchronously inside an effect costs a cascading render.
-  const [linkError] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
+  // The whole fragment is read once, during initialisation. Everything the
+  // first render needs to decide is knowable before paint, and setting state
+  // synchronously inside an effect costs a cascading render.
+  const [link] = useState(() => {
+    if (typeof window === "undefined") {
+      return { error: null as string | null, access: null as string | null, refresh: null as string | null };
+    }
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const raw = hash.get("error_description") ?? hash.get("error");
-    return raw ? raw.replace(/\+/g, " ") : null;
+    return {
+      error: raw ? raw.replace(/\+/g, " ") : null,
+      access: hash.get("access_token"),
+      refresh: hash.get("refresh_token"),
+    };
   });
+  const [linkError, setLinkError] = useState<string | null>(link.error);
   const [phase, setPhase] = useState<Phase>(() =>
-    linkError ? "invalid" : "checking",
+    link.error || !link.access || !link.refresh ? "invalid" : "checking",
   );
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -44,27 +54,42 @@ export function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (linkError) return;
+    if (link.error || !link.access || !link.refresh) return;
 
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
 
-    // The client parses the fragment asynchronously, so a session may not
-    // exist on the first tick. Listen as well as poll once.
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) setPhase("ready");
-    });
-
-    void supabase.auth.getSession().then(({ data }) => {
-      setPhase((current) =>
-        data.session ? "ready" : current === "checking" ? "invalid" : current,
-      );
-    });
-
-    return () => sub.subscription.unsubscribe();
-  }, [linkError]);
+    /**
+     * Hand the tokens over explicitly rather than waiting to be told.
+     *
+     * `createBrowserClient` defaults to the PKCE flow, which looks for `?code=`
+     * in the query string. A recovery link is implicit flow and delivers
+     * `#access_token=…` in the fragment, so `detectSessionInUrl` never fires
+     * and no session ever appears — the page sat on a valid token reporting
+     * the link as invalid. Confirmed on the live deployment: the tokens were
+     * present in the fragment and the client's storage was empty.
+     *
+     * `setSession` is also deterministic, which removes the race the previous
+     * version had between `getSession` resolving empty and `onAuthStateChange`
+     * firing late.
+     */
+    void supabase.auth
+      .setSession({ access_token: link.access, refresh_token: link.refresh })
+      .then(({ error: sessionError }) => {
+        if (sessionError) {
+          setLinkError(sessionError.message);
+          setPhase("invalid");
+          return;
+        }
+        // Drop the tokens from the address bar once they are a session: they
+        // are credentials, and they would otherwise sit in history and in
+        // anything the reader pastes.
+        window.history.replaceState(null, "", window.location.pathname);
+        setPhase("ready");
+      });
+  }, [link]);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
