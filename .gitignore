@@ -28,3 +28,6 @@ supabase/.temp
 
 # Source documents for content imports; the published copy lives in the DB.
 contrentDraft/
+
+# Screenshots of reported defects; not part of the build.
+Bugs/

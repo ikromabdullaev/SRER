@@ -863,7 +863,11 @@ time,
    72 characters in PT Serif at this size -- inside the measure the rest of the
    site keeps -- and it gives the data figures room the 34rem column did not. */
 .post {
-  max-width: 40rem;
+  /* 64rem. On a 1280px laptop that is 80% of the screen, which is what was
+     asked for; on a 1920px monitor it caps rather than running to 1536px,
+     because a line of body text 180 characters long loses the reader on the
+     carriage return. Raise the cap if the wider screens matter more. */
+  max-width: 64rem;
   margin: 0 auto;
   padding: var(--s7) 0 var(--s8);
 }
@@ -873,6 +877,24 @@ time,
   /* No ch cap: the column is 40rem now, and a 22ch limit inside it broke a
      six-word title across three lines. The column is the measure. */
   margin-bottom: var(--s5);
+}
+
+/* Source URLs run to 562px unbroken — wider than a phone. A token that cannot
+   wrap does not merely overflow its column: it widens the document, and the
+   browser then scales the whole page down to fit, which is why the masthead's
+   red field stopped short of the screen edge on a real device rather than the
+   text simply clipping. Every long-form surface breaks them. */
+.post-body,
+.prose,
+.article,
+.record__excerpt {
+  overflow-wrap: break-word;
+}
+
+.post-body a,
+.prose a {
+  /* Anywhere, not just at break opportunities: a bare URL has none. */
+  overflow-wrap: anywhere;
 }
 
 .post-body {
@@ -1873,11 +1895,11 @@ main > table {
    that sits in the page rather than beside it. */
 
 .prose {
-  /* Centred. A reading column against the left edge of a wide shell reads
-     as a rendering failure, not as a grid — and it is the first thing a
-     visitor notices. 42rem is about 74 characters at this size, the top of
-     the comfortable range rather than the bottom. */
-  max-width: 42rem;
+  /* Centred, and wide. A reading column against the left edge of a 78rem
+     shell reads as a rendering failure rather than a grid; a narrow one
+     centred in it reads as timid. Same cap as the Weekly: 80% of a laptop
+     screen, capped before a 1920px monitor turns it into 180 characters. */
+  max-width: 64rem;
   margin: 0 auto;
   padding: var(--s8) 0 var(--s9);
 }
