@@ -23,7 +23,12 @@ export type Locale = (typeof routing.locales)[number];
 
 export const localeNames: Record<Locale, string> = {
   en: "English",
-  uz: "O'zbekcha",
+  // U+02BC, not the ASCII apostrophe. Uzbek Latin writes this letter with a
+  // modifier letter, and it is the reason the fonts are self-hosted at all
+  // (DESIGN.md, "Why the fonts are self-hosted"). A straight quote here
+  // renders in whatever fallback the browser reaches for, inside the one
+  // word naming the language.
+  uz: "Oʼzbekcha",
   ru: "Русский",
 };
 

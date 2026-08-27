@@ -154,5 +154,13 @@
     "noFees": "No fees to read or publish",
     "openAccess": "Open access",
     "read": "Read"
+  },
+  "notFound": {
+    "home": "Go to the homepage",
+    "issues": "Browse the issues",
+    "lede": "Nothing at this address.",
+    "permanence": "Article addresses here are permanent and never change, so a citation that does not open was either mistyped or points at work this journal has not published.",
+    "search": "Search the journal",
+    "title": "Page not found"
   }
 }

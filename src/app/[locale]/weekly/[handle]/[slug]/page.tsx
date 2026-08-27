@@ -16,10 +16,29 @@ import { absoluteUrl, journal } from "@/config/journal";
  * claims as content (SPEC.md → Weekly). Posts get ordinary `Article` JSON-LD.
  */
 
+/**
+ * Every post is a known route in all three locales, and an address that is not
+ * one of them is not a post.
+ *
+ * The locales a post was not written in are still prerendered — they render as
+ * the 308 below rather than as pages. Leaving them dynamic meant an unknown
+ * handle or slug reached the component and called `notFound()` mid-render,
+ * after the response had begun streaming, which makes Next abandon the layout
+ * and serve its bare `__next_error__` shell instead of the 404 page. Resolving
+ * the miss here, above the segment, gets the real one.
+ */
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
-  // Only the locales a post exists in are prerendered. The rest are redirects
-  // resolved at request time, not generated pages.
-  return getPostRoutes();
+  const routes = await getPostRoutes();
+  const seen = new Set<string>();
+
+  return routes.flatMap(({ handle, slug }) => {
+    const key = `${handle}/${slug}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return routing.locales.map((locale) => ({ locale, handle, slug }));
+  });
 }
 
 export async function generateMetadata({

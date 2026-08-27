@@ -257,5 +257,13 @@ Named so they do not creep back:
   production build green, and the rendered HTML checked for each new device on
   each route. The composition itself — in particular the red masthead, paper
   nav, red submit field sequence — has not been seen.
+- **The 404 page is always English.** Next resolves a route that matches no
+  static params *above* the `[locale]` segment, so the root boundary answers
+  and cannot know which locale was asked for — `/uz/articles/nope` renders the
+  English page. `[locale]/not-found.tsx` exists and is localised, but only
+  fires for the narrower case of `notFound()` thrown inside the segment. The
+  mitigation is that the root page offers all three languages as links rather
+  than assuming one. Fixing it properly needs the miss detected in the proxy,
+  which cannot know a route will 404 before routing runs.
 - No logo artwork exists; the identity is the wordmark set in Golos Text.
 - Editorial board page is deliberately empty pending real names.

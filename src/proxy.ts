@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import createMiddleware from "next-intl/middleware";
+import { hasLocale } from "next-intl";
 import { routing } from "./i18n/routing";
 
 const intlProxy = createMiddleware(routing);
@@ -80,14 +81,57 @@ async function withSession(request: NextRequest) {
 }
 
 export default async function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/admin")) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/admin")) {
     return withSession(request);
   }
+
+  /**
+   * An address whose first segment is not a locale — `/about`, or a citation
+   * that lost its `/en` in a PDF line break — is answered by the default
+   * locale rather than thrown away.
+   *
+   * It also fixes the 404 itself. `localePrefix: "always"` means next-intl
+   * does not redirect these, so `/nonsense` matched the `[locale]` segment
+   * with locale="nonsense", and the layout's own `notFound()` fired *while
+   * rendering* — after the response had begun streaming, which makes Next
+   * swap in its bare `__next_error__` shell instead of the 404 page. Sending
+   * it to `/en/nonsense` lets the miss resolve above the segment, where the
+   * real not-found page answers it.
+   */
+  const first = pathname.split("/")[1];
+
+  // A dot means a file, and every one of them is a real route: sitemap.xml
+  // and robots.txt are the two URLs a crawler fetches before anything else.
+  // This has to return, not fall through -- next-intl would redirect them into
+  // a locale, and /en/sitemap.xml does not exist.
+  if (first.includes(".")) {
+    return NextResponse.next();
+  }
+
+  if (first && !hasLocale(routing.locales, first)) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${routing.defaultLocale}${pathname}`;
+    return NextResponse.redirect(url);
+  }
+
   return intlProxy(request);
 }
 
 export const config = {
-  // `/` is not here: it is a permanent 308 in next.config.ts, because
-  // next-intl's proxy would answer it with a temporary 307.
-  matcher: ["/(en|uz|ru)/:path*", "/admin/:path*"],
+  /**
+   * `/` is not here: it is a permanent 308 in next.config.ts, because
+   * next-intl's proxy would answer it with a temporary 307, and config
+   * redirects run ahead of the proxy.
+   *
+   * The bare single segment is here so that `/about` reaches the default
+   * locale instead of dying, and so that `/nonsense` -- which matches the
+   * [locale] segment with locale="nonsense" -- is redirected before the
+   * layout can call notFound() mid-render and lose the 404 page to Next's
+   * bare error shell. Exclusions live in the function body rather than in a
+   * lookahead, because an escaping mistake in a matcher regex fails silently
+   * and takes the admin session guard down with it.
+   */
+  matcher: ["/(en|uz|ru)/:path*", "/admin/:path*", "/:path"],
 };

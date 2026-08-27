@@ -1431,6 +1431,64 @@ time,
   margin: 0 0 var(--s5);
 }
 
+/* ── Not found ────────────────────────────────────────────────────────
+   Reached by someone whose citation did not resolve, which is the one reader
+   this journal owes the most. It is a page, not an apology: the note states
+   the fact that makes the situation actionable, and the ways onward are a
+   ruled list like every other list here. */
+
+.not-found {
+  max-width: 46rem;
+  padding-bottom: var(--s8);
+}
+
+.not-found__note {
+  font-size: 1.0625rem;
+  line-height: 1.62;
+  color: var(--ink-2);
+  max-width: 52ch;
+  margin: 0 0 var(--s6);
+}
+
+.not-found__ways {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--rule-strong);
+  max-width: 30rem;
+}
+
+.not-found__ways li {
+  border-bottom: 1px solid var(--rule);
+}
+
+.not-found__ways a {
+  display: block;
+  padding: var(--s4) 0;
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  text-decoration: none;
+}
+
+.not-found__ways--languages {
+  border-top: 1px solid var(--rule);
+  margin-top: var(--s6);
+}
+
+.not-found__ways--languages a {
+  font-size: 0.9375rem;
+  padding: var(--s3) 0;
+}
+
+.not-found__ways a:hover {
+  color: var(--red);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
 /* ── Empty states ─────────────────────────────────────────────────────── */
 
 .page-tail {

@@ -154,5 +154,13 @@
     "noFees": "Oʻqish va nashr bepul",
     "openAccess": "Ochiq kirish",
     "read": "Oʻqish"
+  },
+  "notFound": {
+    "home": "Bosh sahifaga",
+    "issues": "Sonlarni koʼrish",
+    "lede": "Bu manzilda hech narsa yʼq.",
+    "permanence": "Bu yerdagi maqola manzillari doimiy va hech qachon oʼzgarmaydi, shuning uchun ochilmayotgan havola yo xato yozilgan, yo jurnal chop etmagan ishga ishora qiladi.",
+    "search": "Jurnaldan qidirish",
+    "title": "Sahifa topilmadi"
   }
 }
