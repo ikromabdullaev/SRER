@@ -25,3 +25,6 @@ supabase/.temp
 
 .vercel
 .env*
+
+# Source documents for content imports; the published copy lives in the DB.
+contrentDraft/

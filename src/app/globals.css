@@ -857,7 +857,14 @@ time,
 
 /* ── Weekly ───────────────────────────────────────────────────────────── */
 
+/* Centred, unlike the prose pages, and for the same reason the article page
+   is: a Weekly issue runs long enough that a column pinned to the left of a
+   78rem shell reads as a rendering failure rather than a grid. 40rem is about
+   72 characters in PT Serif at this size -- inside the measure the rest of the
+   site keeps -- and it gives the data figures room the 34rem column did not. */
 .post {
+  max-width: 40rem;
+  margin: 0 auto;
   padding: var(--s7) 0 var(--s8);
 }
 
@@ -868,12 +875,56 @@ time,
 }
 
 .post-body {
-  max-width: var(--measure);
+  /* `.post` carries the measure now; a second cap here would re-create the
+     lopsided column inside a centred one. */
+  max-width: none;
 }
 
+/* A Weekly issue can run to forty headings across four levels, and at that
+   length an outline the reader cannot feel is an outline that does not work.
+   Each level is separated by size, weight and the space above it — and more
+   space above than below, so a heading belongs to what follows it. */
+
 .post-body h2 {
-  font-size: 1.125rem;
-  margin: var(--s6) 0 var(--s3);
+  font-size: 1.5rem;
+  letter-spacing: -0.015em;
+  border-top: 2px solid var(--rule-strong);
+  padding-top: var(--s3);
+  margin: var(--s8) 0 var(--s4);
+}
+
+.post-body h3 {
+  font-size: 1.1875rem;
+  line-height: 1.25;
+  margin: var(--s6) 0 var(--s2);
+}
+
+/* The innermost level -- "Reading it", the standing analysis note under each
+   item -- is a label rather than a title, so it is set as one. */
+.post-body h4 {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: var(--s5) 0 var(--s2);
+}
+
+/* Figures carry data, and their captions carry the source. Neither is
+   decoration, so both get the record's own vocabulary. */
+.post-body figure {
+  margin: var(--s6) 0;
+}
+
+.post-body figcaption {
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s2);
+  margin-top: var(--s3);
 }
 
 .post-body img {
