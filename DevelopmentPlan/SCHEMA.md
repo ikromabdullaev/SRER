@@ -43,7 +43,12 @@ stays nullable with no constraint requiring it.
 ## Extensions
 
 ```sql
-create extension if not exists "uuid-ossp";
+-- uuid-ossp is deliberately NOT installed. `uuid_generate_v4()` lives in it,
+-- and on hosted Supabase extensions are installed into the `extensions`
+-- schema, which is not on the search path during a migration -- so every
+-- `default uuid_generate_v4()` fails with 42883 there while working locally.
+-- `gen_random_uuid()` is in pg_catalog, core since Postgres 13, and needs no
+-- extension or schema qualification anywhere.
 create extension if not exists pg_trgm;      -- Uzbek trigram search
 create extension if not exists unaccent;
 ```
@@ -127,7 +132,7 @@ and `bio` only — the same column-grant technique that withholds
 
 ```sql
 create table issues (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   volume            int not null,
   number            int not null,
   year              int not null,
@@ -152,7 +157,7 @@ create table issue_translations (
 
 ```sql
 create table articles (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   slug              text not null unique,
   doi               text unique,
   issue_id          uuid references issues(id) on delete set null,  -- null = online first
@@ -260,7 +265,7 @@ create table article_translations (
 
 ```sql
 create table authors (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   slug          text not null unique,   -- URL-safe; /authors/{slug}
   family_name   text not null,     -- Latin, canonical
   given_name    text not null,     -- Latin, canonical
@@ -313,7 +318,7 @@ make legible later.
 
 ```sql
 create table proposals (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   name          text not null,
   email         text not null,
   affiliation   text,
@@ -337,7 +342,7 @@ The Weekly series (see `SPEC.md` → **Weekly**). A separate content type from
 
 ```sql
 create table posts (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   author_id     uuid not null references profiles(id) on delete restrict,
   slug          text not null,
   state         publish_state not null default 'draft',
@@ -421,7 +426,7 @@ Create these. Do not build features against them.
 
 ```sql
 create table reviews (
-  id              uuid primary key default uuid_generate_v4(),
+  id              uuid primary key default gen_random_uuid(),
   article_id      uuid not null references articles(id) on delete cascade,
   reviewer_id     uuid references profiles(id),
   round           int not null default 1,
@@ -434,7 +439,7 @@ create table reviews (
 );
 
 create table editorial_decisions (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   article_id    uuid not null references articles(id) on delete cascade,
   editor_id     uuid references profiles(id),
   round         int not null default 1,
@@ -667,13 +672,36 @@ whether the role may touch the table at all. A table with perfect policies and
 no grant returns `permission denied for table articles` through PostgREST — not
 an empty array.
 
-Supabase does **not** grant anything on new tables implicitly. Verified against
-a local stack: with the policies below in place and no grants, every anon
-request to `/rest/v1/articles` returned 42501, and only `authors` worked,
-because it is the one table this file grants explicitly. Do not rely on ambient
-default privileges; state the grants.
+**The local stack and a hosted project disagree about the starting point, and
+the hosted one is the dangerous direction.**
+
+Locally, Supabase grants nothing on new tables: with the policies below in
+place and no grants, every anon request to `/rest/v1/articles` returns 42501.
+
+A hosted project bootstraps `alter default privileges in schema public grant
+all on tables to anon, authenticated`, so every table this migration creates
+arrives already carrying a **table-level** grant for anon. A table-level
+`SELECT` covers every column, which silently defeats each column-scoped grant
+below — `authors.email` and `profiles.role` become world-readable, and the
+local harness cannot see it because locally there is no such default.
+
+Verified on the hosted project: with only the column grants, anon reading
+`/rest/v1/authors?select=slug,email` returned the address. Hence the blanket
+revoke that opens the block. Revoke first, then grant exactly what is
+intended; never rely on the ambient state being either permissive or empty.
+
+`service_role` is deliberately left alone — it is the server-side key, it
+bypasses RLS by design, and it is never exposed to a browser.
 
 ```sql
+-- Start from nothing. A hosted Supabase project has already granted anon and
+-- authenticated ALL on every table in this schema via default privileges, and
+-- a table-level grant covers every column -- which would publish
+-- `authors.email` and `profiles.role` regardless of the column lists below.
+-- This is a no-op on a local stack and load-bearing in production.
+revoke all on all tables in schema public from anon, authenticated;
+revoke all on all sequences in schema public from anon, authenticated;
+
 -- Public read. Row visibility is still decided by the policies above: these
 -- tables are readable, not their draft rows.
 grant select on articles             to anon, authenticated;

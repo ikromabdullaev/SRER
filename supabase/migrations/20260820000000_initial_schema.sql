@@ -3,7 +3,12 @@
 -- source of truth for the data model and outranks this file.
 
 -- ===== block 1 : Extensions =====
-create extension if not exists "uuid-ossp";
+-- uuid-ossp is deliberately NOT installed. `uuid_generate_v4()` lives in it,
+-- and on hosted Supabase extensions are installed into the `extensions`
+-- schema, which is not on the search path during a migration -- so every
+-- `default uuid_generate_v4()` fails with 42883 there while working locally.
+-- `gen_random_uuid()` is in pg_catalog, core since Postgres 13, and needs no
+-- extension or schema qualification anywhere.
 create extension if not exists pg_trgm;      -- Uzbek trigram search
 create extension if not exists unaccent;
 
@@ -47,7 +52,7 @@ create table profiles (
 
 -- ===== block 6 : `issues` =====
 create table issues (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   volume            int not null,
   number            int not null,
   year              int not null,
@@ -69,7 +74,7 @@ create table issue_translations (
 
 -- ===== block 7 : `articles` =====
 create table articles (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   slug              text not null unique,
   doi               text unique,
   issue_id          uuid references issues(id) on delete set null,  -- null = online first
@@ -143,7 +148,7 @@ create table article_translations (
 
 -- ===== block 9 : `authors` =====
 create table authors (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   slug          text not null unique,   -- URL-safe; /authors/{slug}
   family_name   text not null,     -- Latin, canonical
   given_name    text not null,     -- Latin, canonical
@@ -178,7 +183,7 @@ create table article_authors (
 
 -- ===== block 10 : `proposals` =====
 create table proposals (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   name          text not null,
   email         text not null,
   affiliation   text,
@@ -196,7 +201,7 @@ create table proposals (
 
 -- ===== block 11 : `posts` =====
 create table posts (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   author_id     uuid not null references profiles(id) on delete restrict,
   slug          text not null,
   state         publish_state not null default 'draft',
@@ -259,7 +264,7 @@ create table post_translations (
 
 -- ===== block 13 : Defined but unused in v1 =====
 create table reviews (
-  id              uuid primary key default uuid_generate_v4(),
+  id              uuid primary key default gen_random_uuid(),
   article_id      uuid not null references articles(id) on delete cascade,
   reviewer_id     uuid references profiles(id),
   round           int not null default 1,
@@ -272,7 +277,7 @@ create table reviews (
 );
 
 create table editorial_decisions (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   article_id    uuid not null references articles(id) on delete cascade,
   editor_id     uuid references profiles(id),
   round         int not null default 1,
@@ -473,6 +478,14 @@ create policy "staff update proposals"
   on proposals for update using (is_staff());
 
 -- ===== block 16 : Grants =====
+-- Start from nothing. A hosted Supabase project has already granted anon and
+-- authenticated ALL on every table in this schema via default privileges, and
+-- a table-level grant covers every column -- which would publish
+-- `authors.email` and `profiles.role` regardless of the column lists below.
+-- This is a no-op on a local stack and load-bearing in production.
+revoke all on all tables in schema public from anon, authenticated;
+revoke all on all sequences in schema public from anon, authenticated;
+
 -- Public read. Row visibility is still decided by the policies above: these
 -- tables are readable, not their draft rows.
 grant select on articles             to anon, authenticated;

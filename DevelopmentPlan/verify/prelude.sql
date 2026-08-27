@@ -8,12 +8,26 @@ create role service_role nologin bypassrls;
 
 grant usage on schema public to anon, authenticated, service_role;
 
--- NOTE: real Supabase grants NOTHING on new tables to anon. An earlier version
--- of this shim set `alter default privileges ... grant select to anon`, which
--- made the harness pass while the real stack returned 42501 for every table.
--- The grants now live in SCHEMA.md where they belong; this shim deliberately
--- adds none, so the harness fails the same way production would.
-alter default privileges in schema public grant all on tables to service_role;
+-- Default privileges, matching a HOSTED Supabase project.
+--
+-- This has been wrong in both directions. It once granted `select` to anon,
+-- which made the harness pass while a local stack returned 42501 for every
+-- table; that was removed. But removing it went too far: a hosted project
+-- bootstraps `grant all on tables to anon, authenticated`, so every table a
+-- migration creates arrives with a table-level grant covering every column --
+-- and that silently defeats the column-scoped grants in SCHEMA.md.
+--
+-- Found in production, not here: anon could read `authors.email` on the
+-- hosted project while this harness reported it denied. The shim now
+-- reproduces the permissive hosted starting point, so SCHEMA.md's blanket
+-- `revoke` is exercised and the authors.email assertion means something.
+--
+-- The rule this encodes: model the environment you deploy to, not the one
+-- that is convenient to test.
+alter default privileges in schema public
+  grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on sequences to anon, authenticated, service_role;
 
 -- Supabase installs contrib extensions into an `extensions` schema and the
 -- seed uses extensions.crypt() to set local dev passwords.
