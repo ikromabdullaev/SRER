@@ -22,3 +22,6 @@ supabase/.temp
 
 # Local dev server log (see the dev-server note in README/CLAUDE.md)
 .next-dev-log/
+
+.vercel
+.env*

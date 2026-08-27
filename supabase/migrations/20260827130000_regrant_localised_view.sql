@@ -1,0 +1,19 @@
+-- Restore the grant on `published_articles_localised`.
+--
+-- 20260827130000 follows 20260827120000, which revoked all ambient privileges
+-- from anon and authenticated before re-granting the intended ones. In
+-- Postgres, `revoke all on all tables in schema public` includes VIEWS -- and
+-- by the time that repair ran, the view already existed, so its grant went
+-- with everything else. The repair re-granted the tables it knew about and
+-- not the view, and the build then failed prerendering /en/online-first with
+--
+--   42501: permission denied for view published_articles_localised
+--
+-- The initial migration does not have this problem: its revoke runs before
+-- the Views section creates the view, so the grant that follows is untouched.
+-- A fresh deployment therefore never needs this file.
+--
+-- The view is `security_invoker`, so this grant does not widen anything: row
+-- visibility is still decided by the policies on the underlying tables, which
+-- is precisely why RLS reaches through it at all.
+grant select on published_articles_localised to anon, authenticated;
