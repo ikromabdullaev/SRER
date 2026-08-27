@@ -136,6 +136,115 @@ export async function saveArticle(
   return { ok: true, id: data as unknown as string };
 }
 
+export type DeleteResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Withdraws a published article.
+ *
+ * The correct answer for something that should stop being cited but has
+ * already been cited. The row stays, the URL keeps resolving, and the slug
+ * stays locked -- a database trigger refuses to release it, so nothing else
+ * can ever occupy that URL.
+ *
+ * SPEC.md open decision D3 has not settled what a withdrawn article's page
+ * should say. Until it does, this changes the state and nothing else.
+ */
+export async function withdrawArticle(id: string): Promise<DeleteResult> {
+  const profile = await getStaffProfile();
+  if (!profile) return { ok: false, error: "Not signed in." };
+
+  const supabase = await createAuthClient();
+  const { data: article } = await supabase
+    .from("articles")
+    .select("id, slug, state")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!article) return { ok: false, error: "Not found." };
+  if (article.state === "withdrawn") {
+    return { ok: false, error: "That article is already withdrawn." };
+  }
+
+  const { error } = await supabase
+    .from("articles")
+    .update({ state: "withdrawn" })
+    .eq("id", id);
+
+  if (error) return { ok: false, error: error.message };
+
+  for (const locale of routing.locales) {
+    revalidatePath(`/${locale}/articles/${article.slug}`);
+    revalidatePath(`/${locale}/issues`);
+    revalidatePath(`/${locale}/online-first`);
+    revalidatePath(`/${locale}`);
+  }
+  revalidatePath("/admin/articles");
+  return { ok: true };
+}
+
+/**
+ * Deletes an article outright. Translations, author links, reviews and
+ * decisions cascade with it.
+ *
+ * A draft goes without ceremony: it has never had a URL, so nothing can be
+ * pointing at it.
+ *
+ * Anything that has been published is different, and the confirmation is the
+ * point rather than a formality. This journal's whole premise is that a
+ * citation resolves in ten years (PRODUCT.md, "Permanence outranks
+ * improvement"), and deleting a published article breaks that for every
+ * reference to it, in print, forever. `withdrawArticle` is almost always what
+ * is actually wanted. So the caller has to type the slug back: a deliberate
+ * act, not a mis-click, and the slug is the thing being destroyed.
+ */
+export async function deleteArticle(
+  id: string,
+  confirmSlug: string,
+): Promise<DeleteResult> {
+  const profile = await getStaffProfile();
+  if (!profile) return { ok: false, error: "Not signed in." };
+
+  const supabase = await createAuthClient();
+  const { data: article } = await supabase
+    .from("articles")
+    .select("id, slug, state")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!article) return { ok: false, error: "Not found." };
+
+  const wasPublic = article.state !== "draft";
+  if (wasPublic && confirmSlug.trim() !== article.slug) {
+    return {
+      ok: false,
+      error: `This article has been public at /articles/${article.slug}. Type the slug exactly to confirm you mean to break every link to it.`,
+    };
+  }
+
+  // A correction pointing at this one would be left dangling; the FK is NO
+  // ACTION, so Postgres refuses rather than silently orphaning it.
+  const { error } = await supabase.from("articles").delete().eq("id", id);
+  if (error) {
+    if (error.code === "23503") {
+      return {
+        ok: false,
+        error:
+          "Another article records this one as the version it supersedes, so it cannot be deleted. Withdraw it instead.",
+      };
+    }
+    return { ok: false, error: error.message };
+  }
+
+  for (const locale of routing.locales) {
+    revalidatePath(`/${locale}/articles/${article.slug}`);
+    revalidatePath(`/${locale}/issues`);
+    revalidatePath(`/${locale}/online-first`);
+    revalidatePath(`/${locale}`);
+  }
+  revalidatePath("/admin/articles");
+  return { ok: true };
+}
+
 export type AuthorOption = { id: string; label: string };
 
 /**

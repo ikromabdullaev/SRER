@@ -104,8 +104,28 @@ export async function savePost(input: SavePostInput): Promise<SaveResult> {
   return { ok: true, id: data as unknown as string };
 }
 
-/** Removes a post. Drafts only — a published URL should not vanish. */
-export async function deleteDraftPost(id: string): Promise<SaveResult> {
+export type DeleteResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Deletes a Weekly post. Translations cascade with it.
+ *
+ * Weekly is not the scholarly record -- posts carry no citation_* tags and
+ * appear in no OAI-PMH feed, precisely so that editorial commentary is never
+ * mistaken for peer-reviewed work. So deleting one breaks links, not
+ * citations, and that is a materially smaller promise than the one an article
+ * makes.
+ *
+ * It is still a promise. A draft goes without ceremony; anything that has been
+ * published asks for the slug back, so the destructive case is deliberate.
+ *
+ * RLS does the authorisation: "editors manage their own posts" means another
+ * editor's post is simply not visible here, and the lookup below returns
+ * nothing rather than needing its own ownership check.
+ */
+export async function deletePost(
+  id: string,
+  confirmSlug: string,
+): Promise<DeleteResult> {
   const profile = await getStaffProfile();
   if (!profile) return { ok: false, error: "Not signed in." };
 
@@ -113,22 +133,28 @@ export async function deleteDraftPost(id: string): Promise<SaveResult> {
 
   const { data: post } = await supabase
     .from("posts")
-    .select("id, state")
+    .select("id, slug, state")
     .eq("id", id)
     .maybeSingle();
 
   if (!post) return { ok: false, error: "Not found." };
-  if (post.state !== "draft") {
+
+  if (post.state !== "draft" && confirmSlug.trim() !== post.slug) {
     return {
       ok: false,
-      error:
-        "Published posts are not deleted: a URL that disappears breaks every link to it. Ask an admin if it must be withdrawn.",
+      error: `This post is published. Type the slug ${post.slug} exactly to confirm you mean to remove it and break every link to it.`,
     };
   }
 
   const { error } = await supabase.from("posts").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
 
+  const handle = profile.handle;
+  for (const locale of routing.locales) {
+    revalidatePath(`/${locale}/weekly`);
+    if (handle) revalidatePath(`/${locale}/weekly/${handle}/${post.slug}`);
+    revalidatePath(`/${locale}`);
+  }
   revalidatePath("/admin/weekly");
-  return { ok: true, id };
+  return { ok: true };
 }

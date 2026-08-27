@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createAuthClient, getStaffProfile } from "@/lib/supabase/auth";
 import { ArticleEditor } from "@/components/admin/article-editor";
+import { DeleteRecord } from "@/components/admin/delete-record";
+import { deleteArticle, withdrawArticle } from "../actions";
 import type { Locale } from "@/i18n/routing";
 
 export default async function EditArticlePage({
@@ -82,6 +84,27 @@ export default async function EditArticlePage({
           })),
           authors,
         }}
+      />
+
+      <DeleteRecord
+        slug={article.slug}
+        isPublic={article.state !== "draft"}
+        noun="article"
+        returnTo="/admin/articles"
+        onDelete={async (confirmSlug) => {
+          "use server";
+          return deleteArticle(article.id, confirmSlug);
+        }}
+        onWithdraw={
+          article.state === "published"
+            ? async () => {
+                "use server";
+                return withdrawArticle(article.id);
+              }
+            : undefined
+        }
+        withdrawLabel="Withdraw this article instead."
+        withdrawNote="The record and its metadata are kept and the slug stays locked, so nothing else can ever take that URL and the article can be restored. Note that the page itself currently returns 404 while withdrawn — what a withdrawn article should show is SPEC.md open decision D3, still unresolved."
       />
     </>
   );

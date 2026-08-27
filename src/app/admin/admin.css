@@ -576,3 +576,130 @@
     min-width: 0;
   }
 }
+
+/* -- Destructive actions ----------------------------------------------
+   Sits at the foot of an editor behind its own 2px rule, which is a real
+   boundary and not texture: above it is editing, below it is destruction.
+
+   Red is the active state and the primary action everywhere else in admin,
+   so it cannot also be the danger colour without the two reading as the same
+   thing. Delete is therefore an outline that only fills on hover -- it takes
+   an approach to commit -- while Withdraw, which is usually the right answer,
+   is styled as the ordinary action it should feel like. */
+
+.danger {
+  border-top: 2px solid var(--red);
+  margin-top: 4rem;
+  padding-top: 1rem;
+}
+
+.danger h2 {
+  border-top: 0;
+  padding-top: 0;
+  margin: 0 0 1.25rem;
+  color: var(--red);
+}
+
+.danger__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.danger__row:last-of-type {
+  border-bottom: 0;
+}
+
+.danger__lead {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.danger__note {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 46ch;
+  margin: 0.3rem 0 0;
+}
+
+.admin .danger__delete {
+  border-color: var(--red);
+  color: var(--red);
+  background: transparent;
+  white-space: nowrap;
+}
+
+.admin .danger__delete:hover:not([disabled]) {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--paper);
+}
+
+.admin .danger__delete[disabled] {
+  border-color: var(--rule-control);
+  color: var(--ink-3);
+  background: transparent;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.admin .danger__withdraw {
+  white-space: nowrap;
+}
+
+/* The confirmation. Inline rather than a modal: this needs deliberation, not
+   interruption, and the record's own title stays on screen while you decide. */
+.danger__confirm {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.1rem;
+  background: var(--red-wash);
+  border-bottom: 2px solid var(--red);
+}
+
+.danger__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.danger__label b {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.danger__confirm input {
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  max-width: 26rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rule-control);
+  border-bottom: 2px solid var(--ink-3);
+  border-radius: 0;
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+.danger__confirm input:focus {
+  border-bottom-color: var(--red);
+}
+
+.danger__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+/* This block's own submit is destructive, so it must not pick up the red
+   fill that .admin button[type="submit"] gives a primary action. */
+.danger__actions button {
+  background: transparent;
+}

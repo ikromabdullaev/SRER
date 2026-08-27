@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createAuthClient, getStaffProfile } from "@/lib/supabase/auth";
 import { PostEditor } from "@/components/admin/post-editor";
+import { DeleteRecord } from "@/components/admin/delete-record";
+import { deletePost } from "../actions";
 import type { Locale } from "@/i18n/routing";
 
 export default async function EditPostPage({
@@ -42,6 +44,17 @@ export default async function EditPostPage({
             excerpt: t.excerpt ?? "",
             body: t.body,
           })),
+        }}
+      />
+
+      <DeleteRecord
+        slug={post.slug}
+        isPublic={post.state !== "draft"}
+        noun="post"
+        returnTo="/admin/weekly"
+        onDelete={async (confirmSlug) => {
+          "use server";
+          return deletePost(post.id, confirmSlug);
         }}
       />
     </>
