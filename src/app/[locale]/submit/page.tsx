@@ -1,11 +1,33 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { absoluteUrl, localeAlternates } from "@/config/journal";
 import { routing, type Locale } from "@/i18n/routing";
 import { ProposalForm } from "@/components/proposal-form";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+
+  const t = await getTranslations({ locale, namespace: "submit" });
+
+  return {
+    title: t("title"),
+    description: t("lede"),
+    alternates: {
+      canonical: absoluteUrl(`/${locale}/submit`),
+      languages: localeAlternates("/submit", routing.locales, routing.defaultLocale),
+    },
+  };
 }
 
 /**

@@ -1,10 +1,32 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { absoluteUrl, localeAlternates } from "@/config/journal";
 import { routing, isLocale, type Locale } from "@/i18n/routing";
 import { listPosts } from "@/lib/posts";
 import { PostCard } from "@/components/post-card";
 import { LanguageFilter } from "@/components/language-filter";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+
+  const t = await getTranslations({ locale, namespace: "weekly" });
+
+  return {
+    title: t("title"),
+    description: t("lede"),
+    alternates: {
+      canonical: absoluteUrl(`/${locale}/weekly`),
+      languages: localeAlternates("/weekly", routing.locales, routing.defaultLocale),
+    },
+  };
+}
 
 /**
  * The Weekly listing.

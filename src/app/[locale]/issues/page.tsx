@@ -1,12 +1,34 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { absoluteUrl, localeAlternates } from "@/config/journal";
 import { routing, type Locale } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { listIssues } from "@/lib/issues";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+
+  const t = await getTranslations({ locale, namespace: "issues" });
+
+  return {
+    title: t("title"),
+    description: t("lede"),
+    alternates: {
+      canonical: absoluteUrl(`/${locale}/issues`),
+      languages: localeAlternates("/issues", routing.locales, routing.defaultLocale),
+    },
+  };
 }
 
 export default async function IssuesPage({

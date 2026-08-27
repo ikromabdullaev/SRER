@@ -48,7 +48,8 @@ export async function generateMetadata({
   if (!article) return {};
 
   return {
-    title: `${article.title} — ${journal.name}`,
+    // Bare: the locale layout's title template appends the journal name.
+    title: article.title,
     description: article.abstract ?? undefined,
     alternates: {
       canonical: canonicalArticleUrl(article),

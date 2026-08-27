@@ -4,7 +4,7 @@ import { hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { routing, type Locale } from "@/i18n/routing";
 import { CONTENT_PAGES, getContentPage, isContentSlug } from "@/lib/content";
-import { journal, absoluteUrl } from "@/config/journal";
+import { absoluteUrl } from "@/config/journal";
 
 /** Static content pages: about, editorial board, for authors. */
 export const dynamicParams = false;
@@ -30,7 +30,8 @@ export async function generateMetadata({
   for (const l of routing.locales) languages[l] = absoluteUrl(`/${l}/${page}`);
 
   return {
-    title: `${content.title} — ${journal.name}`,
+    // Bare: the locale layout's title template appends the journal name.
+    title: content.title,
     alternates: { canonical: absoluteUrl(`/${locale}/${page}`), languages },
   };
 }

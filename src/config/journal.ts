@@ -116,6 +116,27 @@ export function isProvisionalOrigin(origin: string = siteUrl): boolean {
 /** True only on an origin the journal has committed to. */
 export const siteIsIndexable = !isProvisionalOrigin();
 
+/**
+ * The same path in every locale, plus `x-default`.
+ *
+ * `hreflangAlternates` in citation.ts does this for articles, whose path is
+ * built from a slug. This is the version for pages whose path is fixed, so
+ * every listing carries the same language signals the article pages do.
+ *
+ * Pass an unprefixed path: "/issues", not "/en/issues".
+ */
+export function localeAlternates(
+  path: string,
+  locales: readonly string[],
+  defaultLocale: string,
+): Record<string, string> {
+  const clean = path.startsWith("/") ? path : `/${path}`;
+  const out: Record<string, string> = {};
+  for (const locale of locales) out[locale] = absoluteUrl(`/${locale}${clean}`);
+  out["x-default"] = absoluteUrl(`/${defaultLocale}${clean}`);
+  return out;
+}
+
 /** Absolute URL for a path, for canonical tags and metadata. */
 export function absoluteUrl(path: string): string {
   return `${siteUrl}${path.startsWith("/") ? path : `/${path}`}`;

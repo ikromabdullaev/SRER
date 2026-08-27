@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { journal } from "@/config/journal";
 import { routing, localeHtmlLang, type Locale } from "@/i18n/routing";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -25,6 +27,41 @@ FORM: The Nauka Setting; candidate 1 of 7; seed 6aaea64e.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the
 finish review, the verdict, and DESIGN.md
 -->`;
+
+/**
+ * The title every page inherits.
+ *
+ * Eight of the ten public routes shipped with no `<title>` at all, because
+ * only the pages that happened to define `generateMetadata` had one. A page
+ * with no title is a browser tab showing a URL, an unnamed bookmark, and a
+ * blank line in any search result or shared link.
+ *
+ * `default` covers a page that sets nothing; `template` wraps a page that
+ * sets its own, so no page has to repeat the journal's name.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+
+  const t = await getTranslations({ locale, namespace: "home" });
+
+  return {
+    title: {
+      default: journal.name,
+      template: `%s — ${journal.name}`,
+    },
+    description: t("aboutScope"),
+    openGraph: {
+      siteName: journal.name,
+      locale,
+      type: "website",
+    },
+  };
+}
 
 /**
  * Every locale is prerendered. SPEC.md §2 requires static generation: a

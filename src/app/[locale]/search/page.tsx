@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { absoluteUrl, localeAlternates } from "@/config/journal";
 import { routing, localeHtmlLang, type Locale } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { searchArticles, type ArticleFilters } from "@/lib/search";
@@ -25,6 +27,25 @@ function parseType(value?: string): ArticleType | undefined {
   return value && (ARTICLE_TYPES as string[]).includes(value)
     ? (value as ArticleType)
     : undefined;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) return {};
+
+  const t = await getTranslations({ locale, namespace: "search" });
+
+  return {
+    title: t("title"),
+    alternates: {
+      canonical: absoluteUrl(`/${locale}/search`),
+      languages: localeAlternates("/search", routing.locales, routing.defaultLocale),
+    },
+  };
 }
 
 /**
