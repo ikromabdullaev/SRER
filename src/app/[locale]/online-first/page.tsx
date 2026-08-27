@@ -22,12 +22,16 @@ export default async function OnlineFirstPage({
   const articles = await listOnlineFirst(locale as Locale);
 
   return (
-    <>
-      <h1>{t("onlineFirstTitle")}</h1>
-      <p>{t("onlineFirstLede")}</p>
+    <div className="shell">
+      <header className="page-head">
+        <div>
+          <h1>{t("onlineFirstTitle")}</h1>
+          <p className="page-head__lede">{t("onlineFirstLede")}</p>
+        </div>
+      </header>
 
       {articles.length === 0 ? (
-        <p>{t("none")}</p>
+        <p className="empty">{t("none")}</p>
       ) : (
         <ul className="article-list">
           {articles.map((article) => (
@@ -41,6 +45,6 @@ export default async function OnlineFirstPage({
           ))}
         </ul>
       )}
-    </>
+    </div>
   );
 }

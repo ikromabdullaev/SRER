@@ -61,11 +61,17 @@ on a phone in the metro. That is a daylight, dense-text, glare-prone scene.
 | `--red-deep` | `#7c120e` | Hover and pressed on red | — |
 | `--red-wash` | `#f4e6e4` | Notices — tinted from the hue, never grey | — |
 | `--rule` | `#cbcdc5` | Minor structural rules | — |
+| `--rule-control` | `#868a83` | The edge of a form control | 3.32:1 on raised |
 | `--focus` | `#0f5fa8` | Focus ring, deliberately outside the palette so it never reads as decoration | — |
 
 Colour strategy is **Committed**: one saturated colour carrying whole regions.
 `--ink-3` was measured at 4.13:1 in its first form and darkened until it cleared
 4.5:1, because it carries dates, field labels and placeholder text.
+
+`--rule-control` exists for the same reason. `--rule` is a hairline between
+rows and sits at 1.5:1 on paper — correct for a row separator, and a WCAG
+1.4.11 failure as the boundary of something you are meant to click into.
+Same hue, darkened until it clears 3:1 on both grounds.
 
 ## Type
 
@@ -115,7 +121,76 @@ uppercase at `0.1em`. Display tops out below the 6rem ceiling.
   every row is exactly one fact — type, issue, pages, date, JEL, licence.
   Capped at 60rem and centred, so leftover space is symmetric margin rather
   than a lopsided void.
-- **Prose pages**: single column at the measure. Comprehension first.
+- **Prose pages**: single column at the measure. Comprehension first. The
+  heading takes the same rule the page head does, at the measure rather than
+  at page width.
+
+### The page head
+
+Every interior page used to open with a bare `h1` at roughly body scale and a
+paragraph under it, while the homepage opened at 3.9rem on a red field. That is
+the system opting out of its own strongest move on eight of ten routes, and it
+is the reason the site read as simple.
+
+A page opening is now the same device a section opening is, at page scale: the
+heading carried on the 2px ink rule, at the size the subject deserves, with a
+lede beside it and **one** fact hung on the rule — result count, issue year.
+Deliberately not a display metric: a large numeral over a small label is a
+template, not information, and the fact slot stays empty on pages that have no
+honest number to put in it.
+
+Anything that opens with its own 2px rule gets `--s7` of clearance below the
+page head. Two ink rules a screen-inch apart state the same boundary twice.
+
+### The head as a field
+
+`/submit` is the one interior page that spends the masthead's colour. The
+homepage closes with a red band promising this page, so following that band
+should land the reader *inside* that field rather than on a plain page with a
+form on it. It is also the only page asking a stranger for something, and the
+terms of that ask — no fees in either direction — are set on a rule inside the
+field rather than buried in a paragraph under the form.
+
+No other interior page gets a field. If they all did, the masthead would stop
+being a nameplate.
+
+## Forms
+
+A form here is a record being written, not a stack of boxes — so it uses the
+ruled rows the archive already uses: label in Golos on the left, control on the
+right, one rule per field, the whole thing opened by the same 2px ink rule.
+
+**The writing line.** Every control carries a 2px `--ink-3` edge along its foot
+inside a 1px `--rule-control` box. That foot turns `--red` while the field is
+active, which makes the focused field a *state* rather than a tint, and spends
+the committed colour on exactly one row at a time. Hover darkens the foot to
+ink and lifts the ground from `--paper-raised` to `--paper`.
+
+**The caret is drawn.** `appearance: none` plus an inline SVG chevron at the
+same stroke weight as the rules around it. The browser's own select arrow
+belongs to no design system, and a Unicode glyph standing in for one is a
+costume.
+
+**The attachment** is the only control on the form that is not a line of text,
+so it is the only one that is a field. It draws three states — waiting, sending,
+attached — rather than shipping the operating system's file button in the middle
+of the page. The native input is kept full-size at zero opacity over the block,
+so dragging a file anywhere onto it works and so does the keyboard, and the
+wrapping label carries the field's own name for screen readers alongside the
+visible action. Attached, the file becomes a record row like every other record
+here: name, tabular size, and a way to remove it.
+
+**Errors are placed where the mistake is.** A rejected file reports inside the
+attachment field; everything else reports above the action. An error owns its
+block — red wash under a 2px red rule — the way colour owns fields everywhere
+else here, rather than tinting a border and hoping to be noticed.
+
+**The acknowledgement replaces the form.** Sending a proposal is the one moment
+a stranger commits something to this journal. Leaving a filled-in form on screen
+underneath a line of green text invites them to send it twice.
+
+Admin inherits the same control language at tighter density and spends none of
+the drama, per the Admin section below.
 
 ## The language triad
 
@@ -173,5 +248,14 @@ Named so they do not creep back:
   could be rendered. What *was* verified statically: both breakpoints present
   (`60rem`, `40rem`), no fixed widths above 320px, no oversized `min-width`.
   This needs a real device or a browser that reflows before launch.
+- **The amplification pass was verified statically, not visually.** Chrome
+  could not reach `localhost` from this machine — the extension loads external
+  sites but returns "This page couldn't load" for `localhost` and `127.0.0.1`,
+  so no screenshot of the new page heads, the submit field or the form could be
+  taken. What *was* verified: every new colour pair measured against the 4.5:1
+  and 3:1 floors (24 pairs, no failures), the mechanical detector clean, the
+  production build green, and the rendered HTML checked for each new device on
+  each route. The composition itself — in particular the red masthead, paper
+  nav, red submit field sequence — has not been seen.
 - No logo artwork exists; the identity is the wordmark set in Golos Text.
 - Editorial board page is deliberately empty pending real names.

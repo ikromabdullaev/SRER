@@ -34,18 +34,23 @@ export default async function WeeklyPage({
   const posts = await listPosts(locale as Locale, { filterLocale });
 
   return (
-    <>
-      <h1>{t("title")}</h1>
-      <p>{t("lede")}</p>
-
-      <LanguageFilter
-        current={filterLocale ?? null}
-        label={t("filterLabel")}
-        allLabel={t("filterAll")}
-      />
+    <div className="shell">
+      <header className="page-head">
+        <div>
+          <h1>{t("title")}</h1>
+          <p className="page-head__lede">{t("lede")}</p>
+        </div>
+        {/* The filter belongs on the rule with the heading: on this page it
+            is the control that decides what the list below even contains. */}
+        <LanguageFilter
+          current={filterLocale ?? null}
+          label={t("filterLabel")}
+          allLabel={t("filterAll")}
+        />
+      </header>
 
       {posts.length === 0 ? (
-        <p>{t("none")}</p>
+        <p className="empty">{t("none")}</p>
       ) : (
         <ul className="article-list">
           {posts.map((post) => (
@@ -59,7 +64,6 @@ export default async function WeeklyPage({
           ))}
         </ul>
       )}
-
-    </>
+    </div>
   );
 }

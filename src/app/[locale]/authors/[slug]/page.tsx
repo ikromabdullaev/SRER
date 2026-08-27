@@ -38,26 +38,43 @@ export default async function AuthorPage({
   const articles = await listArticlesByAuthor(author.id, locale as Locale);
 
   return (
-    <>
-      <h1>{author.displayName}</h1>
-      {author.affiliation && (
-        <p className="article__meta">{author.affiliation}</p>
-      )}
-      {author.orcid && (
-        <p className="article__meta">
-          {t("orcid")}:{" "}
-          <a href={`https://orcid.org/${author.orcid}`}>{author.orcid}</a>
-        </p>
-      )}
-      {author.websiteUrl && (
-        <p className="article__meta">
-          <a href={author.websiteUrl}>{t("website")}</a>
-        </p>
+    <div className="shell">
+      <header className="page-head">
+        <div>
+          <h1>{author.displayName}</h1>
+          {author.affiliation && (
+            <p className="page-head__lede">{author.affiliation}</p>
+          )}
+        </div>
+      </header>
+
+      {/* One fact per row, the same record the article page keeps. */}
+      {(author.orcid || author.websiteUrl) && (
+        <dl className="facts facts--wide">
+          {author.orcid && (
+            <div>
+              <dt>{t("orcid")}</dt>
+              <dd>
+                <a href={`https://orcid.org/${author.orcid}`}>{author.orcid}</a>
+              </dd>
+            </div>
+          )}
+          {author.websiteUrl && (
+            <div>
+              <dt>{t("website")}</dt>
+              <dd>
+                <a href={author.websiteUrl}>{author.websiteUrl}</a>
+              </dd>
+            </div>
+          )}
+        </dl>
       )}
 
-      <h2>{t("articles")}</h2>
+      <div className="section__head">
+        <h2>{t("articles")}</h2>
+      </div>
       {articles.length === 0 ? (
-        <p>{t("noArticles")}</p>
+        <p className="empty">{t("noArticles")}</p>
       ) : (
         <ul className="article-list">
           {articles.map((article) => (
@@ -71,6 +88,6 @@ export default async function AuthorPage({
           ))}
         </ul>
       )}
-    </>
+    </div>
   );
 }

@@ -187,16 +187,16 @@ export default async function ArticlePage({
 
         {/* The record. One fact per row; nothing here is decoration. */}
         <aside>
+          {/*
+            Direct, permanent, unauthenticated (SPEC.md §5.1). Same URL as
+            citation_pdf_url, and Scholar follows it. It is a field rather
+            than a small inline button because it is the artifact the reader
+            came for; the rest of this column describes it.
+          */}
           {article.pdfUrl && (
-            <p>
-              {/*
-                Direct, permanent, unauthenticated (SPEC.md §5.1). Same URL as
-                citation_pdf_url, and Scholar follows it.
-              */}
-              <a className="pdf" href={article.pdfUrl}>
-                {t("downloadPdf")}
-              </a>
-            </p>
+            <a className="pdf" href={article.pdfUrl}>
+              {t("downloadPdf")}
+            </a>
           )}
 
           <dl className="facts">

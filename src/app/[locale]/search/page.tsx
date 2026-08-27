@@ -66,8 +66,15 @@ export default async function SearchPage({
   const results = await searchArticles(query, locale as Locale, filters, page);
 
   return (
-    <>
-      <h1>{t("title")}</h1>
+    <div className="shell">
+      <header className="page-head">
+        <div>
+          <h1>{t("title")}</h1>
+        </div>
+        <p className="page-head__fact">
+          {t("resultCount", { count: results.total })}
+        </p>
+      </header>
 
       <SearchForm
         query={query}
@@ -88,10 +95,8 @@ export default async function SearchPage({
         }}
       />
 
-      <p className="article__meta">{t("resultCount", { count: results.total })}</p>
-
       {results.total === 0 ? (
-        <p>{t("noResults")}</p>
+        <p className="empty">{t("noResults")}</p>
       ) : (
         <ul className="article-list">
           {results.hits.map((hit) => (
@@ -135,6 +140,6 @@ export default async function SearchPage({
         nextLabel={t("next")}
         pageLabel={t("pageOf", { page: results.page, total: results.pageCount })}
       />
-    </>
+    </div>
   );
 }

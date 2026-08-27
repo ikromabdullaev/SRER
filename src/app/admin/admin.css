@@ -50,8 +50,25 @@
 }
 
 .admin-login {
-  max-width: 22rem;
-  margin: 5rem auto;
+  max-width: 23rem;
+  margin: 6rem auto;
+}
+
+.admin-login h1 {
+  font-size: 1.375rem;
+  border-bottom: 2px solid var(--rule-strong);
+  padding-bottom: var(--s3, 0.75rem);
+  margin-bottom: 1.75rem;
+}
+
+.admin-login .admin-form {
+  gap: 1.1rem;
+}
+
+.admin-login button[type="submit"] {
+  width: 100%;
+  padding: 0.65rem 1.1rem;
+  margin-top: 0.4rem;
 }
 
 /* ── Forms ────────────────────────────────────────────────────────────── */
@@ -73,22 +90,73 @@
 .admin-form textarea {
   font: inherit;
   font-size: 0.9375rem;
-  padding: 0.45rem 0.55rem;
-  border: 1px solid var(--rule-strong);
-  background: var(--paper-raised);
+  line-height: 1.5;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rule-control);
+  border-bottom: 2px solid var(--ink-3);
+  border-radius: 0;
+  background-color: var(--paper-raised);
   color: var(--ink);
+  transition:
+    border-color 120ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-form textarea {
+  resize: vertical;
+}
+
+.admin-form input:hover:not([disabled]),
+.admin-form select:hover:not([disabled]),
+.admin-form textarea:hover:not([disabled]) {
+  background-color: var(--paper);
+  border-bottom-color: var(--ink);
 }
 
 .admin-form input:focus,
 .admin-form select:focus,
 .admin-form textarea:focus {
-  border-color: var(--red);
+  background-color: var(--paper);
+  border-bottom-color: var(--red);
 }
 
+.admin-form input[disabled],
+.admin-form select[disabled],
+.admin-form textarea[disabled] {
+  color: var(--ink-3);
+  border-bottom-color: var(--rule);
+  cursor: not-allowed;
+}
+
+/* Drawn at the same stroke weight as the rules around it, rather than
+   whichever arrow the operating system supplies. */
+.admin-form select {
+  appearance: none;
+  padding-right: 2.1rem;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='11'%20height='7'%20viewBox='0%200%2011%207'%3E%3Cpath%20d='M1%201l4.5%204.5L10%201'%20fill='none'%20stroke='%2315181B'%20stroke-width='1.5'%20stroke-linecap='square'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+}
+
+.admin-form input[type="checkbox"] {
+  border: 0;
+  accent-color: var(--red);
+}
+
+/* The PDF upload is the one control here that is a field rather than a line,
+   so it is drawn as one instead of shipping the operating system's button in
+   the middle of the publishing form. */
 .admin-form input[type="file"] {
-  border: 1px dashed var(--rule);
-  background: transparent;
-  padding: 0.6rem;
+  border: 1px dashed var(--ink-3);
+  border-radius: 0;
+  background: var(--paper-raised);
+  padding: 0.9rem;
+  cursor: pointer;
+}
+
+.admin-form input[type="file"]:hover {
+  border-color: var(--red);
+  background: var(--paper);
 }
 
 .field-row {

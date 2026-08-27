@@ -35,15 +35,24 @@ export default async function IssuePage({
   const articles = await getIssueContents(issue.id, locale as Locale);
 
   return (
-    <>
-      <h1>{t("issueLine", { volume: issue.volume, number: issue.number })}</h1>
-      <p className="article__meta">{issue.year}</p>
-      {issue.title && <h2>{issue.title}</h2>}
-      {issue.description && <p>{issue.description}</p>}
+    <div className="shell">
+      <header className="page-head">
+        <div>
+          <h1>
+            {t("issueLine", { volume: issue.volume, number: issue.number })}
+          </h1>
+          {issue.title && <p className="page-head__lede">{issue.title}</p>}
+        </div>
+        <p className="page-head__fact">{issue.year}</p>
+      </header>
 
-      <h2>{t("contents")}</h2>
+      {issue.description && <p className="measure">{issue.description}</p>}
+
+      <div className="section__head">
+        <h2>{t("contents")}</h2>
+      </div>
       {articles.length === 0 ? (
-        <p>{t("empty")}</p>
+        <p className="empty">{t("empty")}</p>
       ) : (
         <ul className="article-list">
           {articles.map((article) => (
@@ -65,6 +74,6 @@ export default async function IssuePage({
           ))}
         </ul>
       )}
-    </>
+    </div>
   );
 }

@@ -22,12 +22,16 @@ export default async function IssuesPage({
   const issues = await listIssues(locale as Locale);
 
   return (
-    <>
-      <h1>{t("title")}</h1>
-      <p>{t("lede")}</p>
+    <div className="shell">
+      <header className="page-head">
+        <div>
+          <h1>{t("title")}</h1>
+          <p className="page-head__lede">{t("lede")}</p>
+        </div>
+      </header>
 
       {issues.length === 0 ? (
-        <p>{t("none")}</p>
+        <p className="empty">{t("none")}</p>
       ) : (
         <ul className="article-list">
           {issues.map((issue) => (
@@ -43,11 +47,11 @@ export default async function IssuesPage({
         </ul>
       )}
 
-      <p>
+      <p className="page-tail">
         {/* Online-first articles belong to no issue, so they need their own
             entry point or they are reachable only by search. */}
         <Link href="/online-first">{t("onlineFirstTitle")}</Link>
       </p>
-    </>
+    </div>
   );
 }

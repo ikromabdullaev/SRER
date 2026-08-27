@@ -25,6 +25,12 @@
 
   --rule: #cbcdc5;
   --rule-strong: #15181b;
+  /* A form control's edge has to be identifiable, which WCAG 1.4.11 puts at
+     3:1 against its ground. --rule is a structural hairline between rows and
+     sits at 1.5:1 -- fine for a row separator, not for the boundary of
+     something you are meant to click into. Same hue, darkened until it
+     clears on both paper and paper-raised. */
+  --rule-control: #868a83;
 
   --serif: var(--font-serif), Georgia, "Times New Roman", serif;
   --sans: var(--font-sans), system-ui, "Segoe UI", Arial, sans-serif;
@@ -330,6 +336,101 @@ time,
   font-size: 0.8125rem;
 }
 
+/* ── Page head ───────────────────────────────────────────────────
+   Every interior page used to open with a bare heading at body-adjacent size
+   and a paragraph under it — the system quietly opting out of its own
+   strongest move. A page opening is the same device a section opening is,
+   at page scale: a heading carried on the 2px ink rule, at the size the
+   subject deserves, with one fact hanging on the rule beside it. */
+
+.page-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--s4) var(--s6);
+  padding: var(--s7) 0 var(--s3);
+  border-bottom: 2px solid var(--rule-strong);
+  margin-bottom: var(--s5);
+}
+
+.page-head h1 {
+  font-size: clamp(2rem, 1.35rem + 2.5vw, 3.4rem);
+  max-width: 20ch;
+  margin: 0;
+}
+
+.page-head__lede {
+  font-family: var(--serif);
+  font-size: 1.125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 46ch;
+  margin: var(--s4) 0 0;
+}
+
+/* The right-hand slot states exactly one fact about the page — how many
+   results, which year. Tabular and hung on the rule, so pages of different
+   lengths still line up. It is deliberately not a display metric: a large
+   numeral over a small label is a template, not information. */
+.page-head__fact {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  margin: 0;
+  padding-bottom: 0.4rem;
+}
+
+/* ── The head as a field ───────────────────────────────────────
+   Reserved for /submit. The homepage closes with a red band promising this
+   page; following it should land the reader inside that field rather than on
+   a plain page with a form sitting on it. It is the only interior page that
+   spends the masthead's colour, because it is the only one asking for
+   something. */
+
+.head-field {
+  background: var(--red);
+  color: var(--paper);
+  padding: var(--s7) 0 var(--s8);
+}
+
+.head-field h1 {
+  font-size: clamp(2rem, 1.35rem + 2.5vw, 3.4rem);
+  max-width: 16ch;
+  margin: 0;
+}
+
+.head-field__lede {
+  font-size: 1.125rem;
+  line-height: 1.5;
+  /* Tinted from the field's own hue. Grey on colour is the tell. */
+  color: #f0cdc9;
+  max-width: 48ch;
+  margin: var(--s4) 0 0;
+}
+
+/* No fees in either direction is the single most consequential fact about
+   this journal for the person reading this page. It is set as a fact, on the
+   rule, not buried in the lede. */
+.head-field__terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s6);
+  margin: var(--s6) 0 0;
+  padding-top: var(--s4);
+  border-top: 1px solid rgba(241, 242, 238, 0.4);
+  font-family: var(--sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--paper);
+  list-style: none;
+}
+
 /* ── Record list ──────────────────────────────────────────────────────
    Dense on purpose. A journal with four articles shows four articles
    properly; it does not pad them out with whitespace to look busier. */
@@ -443,9 +544,11 @@ time,
   margin: 0 0 var(--s3);
 }
 
+/* The title of an article is the most important line of type on this site.
+   It was set two steps below the homepage's welcome, which said the opposite. */
 .article h1 {
-  font-size: clamp(1.6rem, 1.25rem + 1.5vw, 2.35rem);
-  margin-bottom: var(--s4);
+  font-size: clamp(1.85rem, 1.35rem + 2.1vw, 2.9rem);
+  margin-bottom: var(--s5);
 }
 
 .article h2 {
@@ -487,6 +590,17 @@ time,
 .facts dd {
   margin: 0;
   font-variant-numeric: tabular-nums;
+}
+
+/* The same record at page width. One system, two widths; not a second idea. */
+.facts--wide {
+  max-width: 46rem;
+  margin-bottom: var(--s6);
+}
+
+.facts--wide div {
+  grid-template-columns: 9rem 1fr;
+  padding: var(--s3) 0;
 }
 
 .authors {
@@ -591,17 +705,26 @@ time,
   border-color: var(--ink);
 }
 
+/* The PDF is the artifact the reader came for, so it is the only thing in
+   the facts column that is a field rather than a row. It was a small inline
+   button sitting above the record, which is the page whispering about the one
+   thing it exists to hand over. */
 .pdf {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s2);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  width: 100%;
+  margin-bottom: var(--s5);
   font-family: var(--sans);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
-  padding: 0.6rem 1.1rem;
+  letter-spacing: 0.01em;
+  padding: var(--s4);
   background: var(--ink);
   color: var(--paper);
   text-decoration: none;
+  transition: background 140ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .pdf:hover {
@@ -739,9 +862,9 @@ time,
 }
 
 .post h1 {
-  font-size: clamp(1.6rem, 1.25rem + 1.5vw, 2.35rem);
-  max-width: 24ch;
-  margin-bottom: var(--s4);
+  font-size: clamp(1.85rem, 1.35rem + 2.1vw, 2.9rem);
+  max-width: 22ch;
+  margin-bottom: var(--s5);
 }
 
 .post-body {
@@ -803,7 +926,15 @@ time,
 .search-form__row {
   display: flex;
   gap: 0;
-  border: 1px solid var(--rule-strong);
+  border: 2px solid var(--rule-strong);
+  background: var(--paper-raised);
+  transition: border-color 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* The instrument states when it is live. Focus moves to the container, not
+   the input, because the input has no edge of its own. */
+.search-form__row:focus-within {
+  border-color: var(--red);
 }
 
 .search-form__query {
@@ -812,16 +943,20 @@ time,
 
 .search-form__query input {
   width: 100%;
-  padding: 0.7rem var(--s4);
+  padding: 0.95rem var(--s4);
   font: inherit;
-  font-size: 1rem;
-  background: var(--paper-raised);
+  font-size: 1.125rem;
+  background: transparent;
   border: 0;
+}
+
+.search-form__query input:focus {
+  outline: none;
 }
 
 .search-form__row button {
   border: 0;
-  border-left: 1px solid var(--rule-strong);
+  border-left: 2px solid var(--rule-strong);
   background: var(--ink);
   color: var(--paper);
   font-family: var(--sans);
@@ -875,6 +1010,27 @@ time,
   font-size: 0.8125rem;
 }
 
+.page-head .language-filter {
+  margin: 0;
+  padding-bottom: 0.4rem;
+}
+
+/* A page head states one boundary. Whatever follows it states the next one,
+   and two 2px ink rules a screen-inch apart say the same thing twice — so
+   anything that opens with its own rule gets real distance first. */
+.page-head + .section__head {
+  margin-top: var(--s7);
+}
+
+.page-head + .facts--wide {
+  margin-top: var(--s6);
+}
+
+.page-head .language-filter select {
+  border-bottom: 2px solid var(--ink-3);
+  padding: 0.35rem 0.5rem;
+}
+
 .language-filter select {
   font: inherit;
   padding: 0.3rem 0.4rem;
@@ -912,43 +1068,324 @@ time,
   cursor: default;
 }
 
-/* ── Forms ────────────────────────────────────────────────────────────── */
+/* -- Forms ------------------------------------------------------------
+   A form here is a record being written, not a stack of boxes. It uses the
+   same ruled rows the archive uses: the label in the structural face on the
+   left, the control on the right, one rule per field.
+
+   Every control carries a 2px ink edge along its foot -- the writing line --
+   which turns red while the field is active. That makes the focused field a
+   state rather than a tint, and it is the same red that owns the masthead,
+   spent here on exactly one row at a time. */
 
 .form {
-  display: grid;
-  gap: var(--s4);
-  max-width: 36rem;
+  max-width: 46rem;
+  margin: var(--s7) 0 var(--s8);
+  border-top: 2px solid var(--rule-strong);
 }
 
-.form label {
+.form__field {
   display: grid;
-  gap: var(--s2);
+  grid-template-columns: 12rem minmax(0, 1fr);
+  gap: var(--s2) var(--s5);
+  align-items: start;
+  padding: var(--s4) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* A field that is one wide control -- the attachment -- spans both columns
+   rather than sitting squeezed into the right-hand one. */
+.form__field--wide {
+  grid-template-columns: 1fr;
+  gap: var(--s3);
+}
+
+.form__label {
   font-family: var(--sans);
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+  padding-top: 0.72rem;
 }
 
-.form input,
+.form__field--wide .form__label {
+  padding-top: 0;
+}
+
+.form__hint {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin-top: var(--s1);
+}
+
+/* Optional is marked; required is not. Marking the majority is noise. */
+.optional {
+  font-family: var(--sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.form input[type="text"],
+.form input[type="email"],
+.form input[type="url"],
+.form input[type="password"],
+.form input[type="number"],
+.form input[type="search"],
 .form select,
 .form textarea {
+  width: 100%;
   font: inherit;
   font-family: var(--serif);
-  font-size: 1rem;
-  padding: 0.55rem var(--s3);
-  border: 1px solid var(--rule-strong);
-  background: var(--paper-raised);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  padding: 0.68rem 0.8rem;
   color: var(--ink);
+  background-color: var(--paper-raised);
+  border: 1px solid var(--rule-control);
+  border-bottom: 2px solid var(--ink-3);
+  border-radius: 0;
+  transition:
+    border-color 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.form textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.form input:hover:not([disabled]),
+.form select:hover:not([disabled]),
+.form textarea:hover:not([disabled]) {
+  background-color: var(--paper);
+  border-bottom-color: var(--ink);
 }
 
 .form input:focus,
-.form textarea:focus,
-.form select:focus {
+.form select:focus,
+.form textarea:focus {
+  background-color: var(--paper);
+  border-bottom-color: var(--red);
+}
+
+.form input[disabled],
+.form select[disabled],
+.form textarea[disabled] {
+  color: var(--ink-3);
+  border-bottom-color: var(--rule);
+  cursor: not-allowed;
+}
+
+/* The caret is drawn, at the same stroke weight as the rules around it. The
+   browser's own select arrow belongs to no design system, and a Unicode
+   chevron standing in for one is a costume. */
+.form select {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='11'%20height='7'%20viewBox='0%200%2011%207'%3E%3Cpath%20d='M1%201l4.5%204.5L10%201'%20fill='none'%20stroke='%2315181B'%20stroke-width='1.5'%20stroke-linecap='square'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+}
+
+/* -- The attachment ---------------------------------------------------
+   The only control on the form that is not a line of text, so the only one
+   that is a field. Three drawn states: waiting, sending, attached. A bare
+   input[type=file] renders the operating system's own button, which is the
+   one piece of this page nobody designed. */
+
+.file-field {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--s2);
+  padding: var(--s6) var(--s4);
+  background: var(--paper-raised);
+  border: 1px dashed var(--ink-3);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.file-field:hover {
+  background: var(--paper);
   border-color: var(--red);
 }
 
-.optional {
+.file-field:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Kept in the layout and operable, so the pointer and the keyboard both reach
+   it; only its rendering is replaced. */
+.file-field input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-field__action {
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.file-field__action em {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-color: var(--red);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
+.file-field__hint {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  line-height: 1.5;
   color: var(--ink-3);
+  margin: 0;
+}
+
+/* Attached: the file becomes a record row, like every other record here. */
+.file-field--attached {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s4);
+  padding: var(--s4);
+  text-align: left;
+  cursor: default;
+  border-style: solid;
+  border-color: var(--rule-control);
+  border-bottom: 2px solid var(--ink);
+}
+
+.file-field--attached:hover {
+  background: var(--paper-raised);
+  border-color: var(--rule-control);
+  border-bottom-color: var(--ink);
+}
+
+.file-field__name {
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.file-field__size {
+  font-family: var(--sans);
+  font-size: 0.8125rem;
   font-weight: 400;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  margin-left: var(--s2);
+}
+
+.file-field__remove {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--red);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.file-field__remove:hover {
+  color: var(--red-deep);
+}
+
+/* Sending. State feedback, not entrance choreography: the bar exists only
+   while a transfer is actually in flight. */
+.file-field--busy {
+  cursor: progress;
+  border-style: solid;
+  border-color: var(--rule-control);
+  padding: var(--s4);
+  gap: var(--s3);
+  justify-items: stretch;
+}
+
+.file-field__bar {
+  width: 100%;
+  height: 2px;
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.file-field__bar::after {
+  content: "";
+  display: block;
+  width: 32%;
+  height: 100%;
+  background: var(--red);
+  animation: sending 1150ms cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes sending {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+/* -- Committing -------------------------------------------------------- */
+
+.form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s4) var(--s5);
+  padding-top: var(--s5);
+}
+
+.form__actions button[type="submit"] {
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.85rem 2.2rem;
+  background: var(--red);
+  color: var(--paper);
+  border: 1px solid var(--red);
+  border-radius: 0;
+  cursor: pointer;
+  transition: background 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.form__actions button[type="submit"]:hover:not([disabled]) {
+  background: var(--red-deep);
+  border-color: var(--red-deep);
+}
+
+.form__actions button[disabled] {
+  background: var(--ink-3);
+  border-color: var(--ink-3);
+  cursor: progress;
 }
 
 .honeypot {
@@ -959,21 +1396,51 @@ time,
   overflow: hidden;
 }
 
+/* An error owns its block, the way colour owns fields everywhere else here,
+   rather than tinting a border and hoping to be noticed. */
 .form-error {
   font-family: var(--sans);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
   color: var(--red-deep);
   background: var(--red-wash);
-  padding: var(--s3) var(--s4);
+  border-top: 2px solid var(--red);
+  padding: var(--s4);
+  margin: var(--s4) 0 0;
 }
 
-.form-ok {
-  font-family: var(--sans);
-  font-size: 0.8125rem;
-  color: #1c5e38;
+/* Sending a proposal is the one moment a stranger commits something to this
+   journal. The acknowledgement is the page, not a line of green text under a
+   form that is somehow still sitting there. */
+.form-done {
+  max-width: 46rem;
+  padding: var(--s7) 0 var(--s8);
+  border-top: 2px solid var(--rule-strong);
+}
+
+.form-done h2 {
+  font-size: clamp(1.6rem, 1.25rem + 1.5vw, 2.4rem);
+  max-width: 20ch;
+  margin: 0 0 var(--s5);
+}
+
+.form-done p {
+  font-size: 1.0625rem;
+  color: var(--ink-2);
+  max-width: 46ch;
+  margin: 0 0 var(--s5);
 }
 
 /* ── Empty states ─────────────────────────────────────────────────────── */
+
+.page-tail {
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s4);
+  margin-top: var(--s6);
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
 
 .empty {
   font-family: var(--sans);
@@ -1028,6 +1495,13 @@ time,
   .article {
     grid-template-columns: 1fr;
     gap: var(--s6);
+  }
+
+  /* Stacked, the PDF no longer sits beside the abstract, so it stops being a
+     full-width slab and becomes an action at its own size. */
+  .pdf {
+    width: auto;
+    max-width: 22rem;
   }
 
   .welcome {
@@ -1093,6 +1567,43 @@ time,
     grid-template-columns: 5.5rem 1fr;
   }
 
+  .page-head {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .page-head__fact {
+    text-align: left;
+    padding-bottom: 0;
+  }
+
+  /* One column, label above control. The two-column field is a desk layout;
+     on a phone it leaves the control a third of the screen wide. */
+  .form__field {
+    grid-template-columns: 1fr;
+    gap: var(--s2);
+  }
+
+  .form__label {
+    padding-top: 0;
+  }
+
+  /* The bleeding row highlight has nothing to bleed into once the shell is
+     down to its narrow padding. */
+  .article-list > li {
+    padding-left: 0;
+    padding-right: 0;
+    margin: 0;
+  }
+
+  .file-field {
+    padding: var(--s5) var(--s4);
+  }
+
+  .form__actions button[type="submit"] {
+    width: 100%;
+  }
+
   .search-form__row {
     flex-wrap: wrap;
   }
@@ -1117,14 +1628,24 @@ time,
   border-top: 1px solid var(--rule);
 }
 
+/* The row is the interactive object, not just the link inside it: the hover
+   is the whole row, edge to edge, so a mouse anywhere on the line tells you
+   what it is about to open. It bleeds into the shell's own padding rather
+   than inset, because an inset highlight is a card in disguise. */
 .article-list > li {
   border-bottom: 1px solid var(--rule);
-  padding: var(--s4) 0;
+  padding: var(--s4);
+  margin: 0 calc(var(--s4) * -1);
+  transition: background 120ms linear;
+}
+
+.article-list > li:hover {
+  background: var(--paper-raised);
 }
 
 .article-list a {
   font-family: var(--sans);
-  font-size: 1.0625rem;
+  font-size: 1.1875rem;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.012em;
@@ -1202,7 +1723,10 @@ main > table {
 }
 
 .prose h1 {
-  margin: 0 0 var(--s5);
+  font-size: clamp(2rem, 1.35rem + 2.5vw, 3.2rem);
+  border-bottom: 2px solid var(--rule-strong);
+  padding-bottom: var(--s4);
+  margin: 0 0 var(--s6);
 }
 
 .prose h2 {
