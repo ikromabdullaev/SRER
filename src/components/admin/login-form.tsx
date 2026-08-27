@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -79,6 +80,10 @@ export function LoginForm({ next }: { next: string }) {
       <button type="submit" disabled={busy}>
         {busy ? "Signing in…" : "Sign in"}
       </button>
+
+      <p className="article__meta">
+        <Link href="/admin/forgot-password">Forgotten your password?</Link>
+      </p>
     </form>
   );
 }

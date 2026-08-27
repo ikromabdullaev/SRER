@@ -60,9 +60,26 @@ async function withSession(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
+
+  /**
+   * The admin pages a person must reach *without* a session.
+   *
+   * `/admin/reset-password` is the load-bearing one. Supabase puts the
+   * recovery token in the URL fragment, which browsers never send to a
+   * server — so the proxy cannot see it, would treat the request as
+   * anonymous, and would redirect. The redirect drops the fragment, and with
+   * it the only copy of the token. The link would fail every time, for a
+   * reason invisible from the server logs.
+   */
+  const PUBLIC_ADMIN_PATHS = [
+    "/admin/login",
+    "/admin/forgot-password",
+    "/admin/reset-password",
+  ];
+  const isPublicAdminPath = PUBLIC_ADMIN_PATHS.includes(pathname);
   const isLogin = pathname === "/admin/login";
 
-  if (!user && !isLogin) {
+  if (!user && !isPublicAdminPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     // Come back to where they were headed once signed in.
