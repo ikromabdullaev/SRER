@@ -29,10 +29,10 @@ Uzbek is set in Latin script.
 
 ## Peer review
 
-**This section is not yet final.** The journal's review model — whether
-single-anonymous, double-anonymous or open — is being settled by the editorial
-board and will be stated here explicitly, in full, before the first call for
-submissions closes.
+> **This section is not yet final.** The journal's review model — whether
+> single-anonymous, double-anonymous or open — is being settled by the editorial
+> board and will be stated here explicitly, in full, before the first call for
+> submissions closes.
 
 We will not describe a process we are not yet running.
 
@@ -65,9 +65,9 @@ never silently edited and never removed.
 
 ## Archiving
 
-**This section is not yet final.** Long-term preservation is being arranged
-and the arrangement will be named here once it is in place. We are not going
-to claim preservation that is not yet happening.
+> **This section is not yet final.** Long-term preservation is being arranged
+> and the arrangement will be named here once it is in place. We are not going
+> to claim preservation that is not yet happening.
 
 ## Licence and copyright
 

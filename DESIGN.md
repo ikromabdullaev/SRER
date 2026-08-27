@@ -95,7 +95,16 @@ reaches for — a different shape and weight sitting inside the word, on the
 language this journal is least entitled to treat as an afterthought.
 
 Measured against the actual font binaries: **neither face ships U+02BB; both
-ship U+02BC.** All content therefore uses **U+02BC**. If the editors want
+ship U+02BC.** All content therefore uses **U+02BC**.
+
+That rule was written and then broken: the Uzbek content pages shipped with
+**84 occurrences of U+02BB** and the UI catalogue with two more, so every
+`oʻ` and `gʻ` on those pages rendered in whatever fallback the browser
+reached for — the exact failure the 164 KB subset exists to prevent, on the
+language this journal is least entitled to treat as an afterthought. Found by
+checking the content against the font binaries rather than by looking at the
+page, because a fallback glyph is easy to miss and impossible to unsee. All
+86 are now U+02BC. If the editors want
 strict U+02BB the fonts must be patched — a deliberate decision, not something
 to discover in production.
 
@@ -121,9 +130,23 @@ uppercase at `0.1em`. Display tops out below the 6rem ceiling.
   every row is exactly one fact — type, issue, pages, date, JEL, licence.
   Capped at 60rem and centred, so leftover space is symmetric margin rather
   than a lopsided void.
-- **Prose pages**: single column at the measure. Comprehension first. The
-  heading takes the same rule the page head does, at the measure rather than
-  at page width.
+- **Prose pages**: a centred 42rem column — about 74 characters, the top of
+  the comfortable range. Read mode, so comprehension still outranks
+  expression, but these pages carry the case for the journal to a researcher
+  deciding where to submit and to DOAJ, and they were the quietest thing on
+  the site: a 34rem column pinned to the left of a 78rem shell, under section
+  headings set at 13px, smaller than the body text they introduced. They now
+  use the system's own devices at full strength — display type at the scale
+  the homepage uses, the 2px ink rule that opens every section elsewhere, and
+  lists as ruled record rows rather than bulleted ones.
+
+  The one place colour owns a region here is a **pending policy**: an
+  unresolved decision gets a red field and says so. That admission is the
+  honest part of a new journal's case, not something to bury. It hangs on a
+  blockquote, not on a bold-led paragraph — a paragraph starting in bold does
+  two unrelated jobs in this content, introducing a defined term and carrying
+  a pending admission, and styling the pattern turned every glossary entry
+  into an alarm. The blockquote is structural, so it survives translation.
 
 ### The page head
 
@@ -243,11 +266,10 @@ Named so they do not creep back:
 
 ## Known gaps
 
-- **Mobile rendering has not been visually verified.** The inspection browser
-  reports `innerWidth: 1920` regardless of window size, so no narrow viewport
-  could be rendered. What *was* verified statically: both breakpoints present
-  (`60rem`, `40rem`), no fixed widths above 320px, no oversized `min-width`.
-  This needs a real device or a browser that reflows before launch.
+- ~~Mobile rendering has not been visually verified.~~ **Closed.** Verified on
+  a real 319px viewport against the deployed site: 16px gutters both sides, the
+  masthead stacks, the nav wraps to three rows, h1 at 32px, body at 17px.
+  Nothing overflowed.
 - **The amplification pass was verified statically, not visually.** Chrome
   could not reach `localhost` from this machine — the extension loads external
   sites but returns "This page couldn't load" for `localhost` and `127.0.0.1`,

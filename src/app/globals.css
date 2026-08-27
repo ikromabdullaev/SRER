@@ -1713,6 +1713,27 @@ time,
     width: 100%;
   }
 
+  /* The prose pages open big on a desktop; at 319px the same rhythm would
+     spend half the first screen on air. Verified on a real 319px viewport,
+     not inferred. */
+  .prose {
+    padding: var(--s6) 0 var(--s7);
+  }
+
+  .prose h1 {
+    padding-bottom: var(--s4);
+    margin-bottom: var(--s5);
+  }
+
+  .prose h2 {
+    font-size: 1.375rem;
+    margin-top: var(--s7);
+  }
+
+  .prose > div > p:first-of-type {
+    font-size: 1.1875rem;
+  }
+
   .search-form__row {
     flex-wrap: wrap;
   }
@@ -1823,47 +1844,136 @@ main > table {
 }
 
 /* ── Prose pages ──────────────────────────────────────────────────────
-   about, editorial board, for authors. Comprehension first: one column at a
-   reading measure, headings that structure rather than decorate. */
+   about, editorial board, for authors.
+
+   These carry the case for the journal to a researcher deciding where to
+   send their work, and to DOAJ. They were the quietest pages on the site:
+   a 34rem column pinned to the left edge of a 78rem shell, leaving two
+   thirds of the screen empty, under section headings set at 13px — smaller
+   than the body text they introduced.
+
+   Read mode, so comprehension still outranks expression. What changes is
+   that the page now uses the system's own devices at full strength instead
+   of opting out of them: the 2px ink rule that opens every section
+   elsewhere, display type at the scale the homepage uses, and a measure
+   that sits in the page rather than beside it. */
 
 .prose {
-  max-width: var(--measure);
-  padding: var(--s7) 0 var(--s8);
+  /* Centred. A reading column against the left edge of a wide shell reads
+     as a rendering failure, not as a grid — and it is the first thing a
+     visitor notices. 42rem is about 74 characters at this size, the top of
+     the comfortable range rather than the bottom. */
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: var(--s8) 0 var(--s9);
 }
 
 .prose h1 {
-  font-size: clamp(2rem, 1.35rem + 2.5vw, 3.2rem);
+  font-size: clamp(2.4rem, 1.5rem + 3.4vw, 4.2rem);
+  line-height: 1.04;
+  letter-spacing: -0.028em;
   border-bottom: 2px solid var(--rule-strong);
-  padding-bottom: var(--s4);
-  margin: 0 0 var(--s6);
+  padding-bottom: var(--s5);
+  margin: 0 0 var(--s7);
 }
 
+/* The opening paragraph states what the page is. It is set as a lede, so the
+   reader knows within one line whether to keep going. */
+.prose > div > p:first-of-type {
+  font-size: 1.3125rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin-bottom: var(--s6);
+}
+
+/* A section heading, not a label. It takes the same 2px ink rule that opens
+   every section on the homepage and every long-form Weekly section — the
+   system's most-used structural device, which these pages were not using.
+   More space above than below: the heading belongs to what follows it. */
 .prose h2 {
-  font-size: 0.8125rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  border-top: 1px solid var(--rule);
-  padding-top: var(--s2);
-  margin: var(--s7) 0 var(--s4);
+  font-size: 1.6875rem;
+  line-height: 1.15;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+  text-transform: none;
+  border-top: 2px solid var(--rule-strong);
+  padding-top: var(--s4);
+  margin: var(--s8) 0 var(--s4);
+}
+
+.prose h3 {
+  font-size: 1.125rem;
+  letter-spacing: -0.01em;
+  margin: var(--s6) 0 var(--s3);
 }
 
 .prose p {
-  margin: 0 0 var(--s4);
+  margin: 0 0 var(--s5);
 }
 
 .prose ul,
 .prose ol {
-  padding-left: 1.15rem;
-  margin: 0 0 var(--s4);
+  padding-left: 0;
+  list-style: none;
+  margin: 0 0 var(--s5);
 }
 
+/* A list item is a record row, the same as everywhere else here: ruled,
+   not bulleted. The marker is the rule. */
 .prose li {
-  margin-bottom: var(--s2);
+  border-top: 1px solid var(--rule);
+  padding: var(--s3) 0;
+  margin: 0;
 }
 
-/* A pending section states itself as pending. Nothing here pretends a policy
-   exists before the editors have decided it. */
+.prose li:last-child {
+  border-bottom: 1px solid var(--rule);
+}
+
+.prose a {
+  text-decoration-thickness: 1px;
+}
+
+/* A pending policy states itself as pending, and gets a field to do it in.
+   Nothing here pretends a decision exists before the editors have made one,
+   and that admission is the honest part of a new journal's case rather than
+   something to bury — so it is the one place on these pages colour owns a
+   region.
+
+   It hangs on a blockquote rather than on a bold-led paragraph. A paragraph
+   beginning in bold does two unrelated jobs in this content: it introduces a
+   defined term, and it carries a pending admission. Styling the pattern
+   turned every glossary entry — "Authorship.", "Originality." — into an
+   alarm. The blockquote is structural, so it survives translation. */
+.prose blockquote {
+  background: var(--red-wash);
+  border-top: 2px solid var(--red);
+  border-left: 0;
+  padding: var(--s4);
+  margin: var(--s6) 0;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.prose blockquote p {
+  margin: 0;
+}
+
+.prose blockquote p + p {
+  margin-top: var(--s3);
+}
+
+.prose blockquote strong {
+  color: var(--red-deep);
+}
+
+/* A defined term leads its paragraph. It is a small glossary, not a warning,
+   so it gets weight and the structural face — and nothing else. */
 .prose p > strong:first-child {
-  color: var(--red);
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+  color: var(--ink);
 }
