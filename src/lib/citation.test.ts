@@ -102,6 +102,19 @@ describe("citationTags", () => {
     expect(names(tags)).not.toContain("citation_keywords");
   });
 
+  it("omits citation_issn while the ISSN is an unresolved placeholder", () => {
+    // A literal "[ISSN]" in citation_issn is worse than no tag: Scholar and
+    // DOAJ index it as the journal's actual ISSN. The guard existed in the
+    // JSON-LD and OAI emitters and was missed here.
+    expect(names(citationTags(article()))).not.toContain("citation_issn");
+  });
+
+  it("emits no unresolved placeholder in any tag", () => {
+    for (const tag of citationTags(article())) {
+      expect(tag.content).not.toMatch(/^\[[A-Z_]+\]$/);
+    }
+  });
+
   it("omits citation_doi while DOIs are out of scope", () => {
     expect(names(citationTags(article()))).not.toContain("citation_doi");
     // ...and starts emitting by itself if one is ever assigned.

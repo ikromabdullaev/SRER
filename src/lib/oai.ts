@@ -1,5 +1,5 @@
 import { createPublicClient } from "./supabase/server";
-import { journal, absoluteUrl, siteUrl } from "@/config/journal";
+import { journal, absoluteUrl, siteUrl, resolved } from "@/config/journal";
 import type { Locale } from "@/i18n/routing";
 import type { Database } from "./supabase/database.types";
 
@@ -335,7 +335,7 @@ export function dublinCore(record: OaiRecord): string {
         (record.firstPage !== null ? `, ${record.firstPage}-${record.lastPage}` : "")
       : journal.name;
   parts.push(element("dc:source", source));
-  if (!journal.issn.startsWith("[")) {
+  if (resolved(journal.issn)) {
     parts.push(element("dc:source", `ISSN ${journal.issn}`));
   }
 

@@ -1,5 +1,5 @@
 import type { LocalisedArticle } from "./articles";
-import { journal, absoluteUrl } from "@/config/journal";
+import { journal, absoluteUrl, resolved } from "@/config/journal";
 import { routing, type Locale } from "@/i18n/routing";
 
 export type MetaTag = { name: string; content: string };
@@ -62,7 +62,8 @@ export function citationTags(article: LocalisedArticle): MetaTag[] {
   }
 
   push("citation_journal_title", journal.name);
-  push("citation_issn", journal.issn);
+  // Omitted while unresolved: Scholar would index the literal "[ISSN]".
+  push("citation_issn", resolved(journal.issn));
   push("citation_volume", article.volume);
   push("citation_issue", article.number);
   push("citation_firstpage", article.firstPage);
@@ -124,7 +125,7 @@ export function articleJsonLd(article: LocalisedArticle): Record<string, unknown
   const periodical = {
     "@type": "Periodical",
     name: journal.name,
-    ...(journal.issn.startsWith("[") ? {} : { issn: journal.issn }),
+    ...(resolved(journal.issn) ? { issn: journal.issn } : {}),
   };
 
   jsonLd.isPartOf =

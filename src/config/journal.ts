@@ -13,6 +13,24 @@
 /** Unresolved placeholders are typed so they cannot be mistaken for real values. */
 export type Placeholder = `[${string}]`;
 
+/**
+ * True when a config value is still an unresolved placeholder.
+ *
+ * Every emitter has to ask this, because a literal `[ISSN]` in machine-read
+ * output is worse than the field being absent: Google Scholar and DOAJ index
+ * it as the journal's actual ISSN. Three call sites hand-rolled
+ * `startsWith("[")` and a fourth forgot to, which is exactly the failure mode
+ * a shared predicate removes.
+ */
+export function isPlaceholder(value: string | null | undefined): boolean {
+  return typeof value === "string" && /^\[[A-Z_]+\]$/.test(value.trim());
+}
+
+/** The value, or null when it is still a placeholder. Safe to emit. */
+export function resolved(value: string | null | undefined): string | null {
+  return !value || isPlaceholder(value) ? null : value;
+}
+
 export const journal = {
   name: "Silk Road Economic Review",
 
