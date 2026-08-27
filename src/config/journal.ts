@@ -78,6 +78,44 @@ export const siteUrl = (
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 ).replace(/\/$/, "");
 
+/**
+ * Whether this origin is one the journal intends to keep.
+ *
+ * `localhost` and a `*.vercel.app` deployment URL are not. They are somewhere
+ * the site happens to be running while D2 is unresolved.
+ *
+ * That matters more here than on most sites. Article URLs are promises
+ * (`PRODUCT.md` principle 4, "Permanence outranks improvement"), and a URL
+ * Google Scholar has indexed is very hard to withdraw — the scholarly record
+ * would point at a host that is going to be abandoned. A provisional origin
+ * that is also indexable is the one mistake this project cannot take back.
+ *
+ * So indexing is opt-in, and the opt-in is owning the domain you configure.
+ * Resolving D2 is what turns the site on for crawlers; nothing else needs to
+ * change.
+ */
+export function isProvisionalOrigin(origin: string = siteUrl): boolean {
+  let host: string;
+  try {
+    host = new URL(origin).hostname.toLowerCase();
+  } catch {
+    // An origin that will not parse is certainly not a domain we own.
+    return true;
+  }
+
+  return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "[::1]" ||
+    host === "::1" ||
+    host === "vercel.app" ||
+    host.endsWith(".vercel.app")
+  );
+}
+
+/** True only on an origin the journal has committed to. */
+export const siteIsIndexable = !isProvisionalOrigin();
+
 /** Absolute URL for a path, for canonical tags and metadata. */
 export function absoluteUrl(path: string): string {
   return `${siteUrl}${path.startsWith("/") ? path : `/${path}`}`;

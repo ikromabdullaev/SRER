@@ -168,6 +168,32 @@ test. It is **not** fine for anything you let Google Scholar or DOAJ see,
 because those URLs then become the ones the world cites. Get the real domain
 before you submit the site anywhere.
 
+### Indexing is gated on this value
+
+While `NEXT_PUBLIC_SITE_URL` points at a `*.vercel.app` host or localhost, the
+site tells every crawler to stay out:
+
+- `robots.txt` serves `Disallow: /` and advertises no sitemap
+- every response carries `X-Robots-Tag: noindex, nofollow`, which also covers
+  `sitemap.xml` and the OAI-PMH endpoint — neither is HTML, so neither can
+  carry a meta tag
+
+This is deliberate. `robots.txt` asks a crawler not to *fetch*; the header
+tells it not to *index*, and only the second survives a page being linked from
+somewhere else. A URL Google Scholar has taken cannot be withdrawn, and one
+pointing at a host you are going to abandon would enter the scholarly record
+permanently.
+
+Set a real domain and both switch off by themselves. Nothing else changes, and
+no article is ever `noindex` on the journal's own domain.
+
+Verify after any change of origin:
+
+```bash
+curl -s https://<site>/robots.txt
+curl -sI https://<site>/en | grep -i x-robots-tag    # expect nothing on the real domain
+```
+
 ### Email
 
 `RESEND_FROM` is deliberately unset. Resend refuses `gmail.com` as a sending
